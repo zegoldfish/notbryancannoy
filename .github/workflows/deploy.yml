@@ -9,6 +9,10 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: notbryancannoy
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
