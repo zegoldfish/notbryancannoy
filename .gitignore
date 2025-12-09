@@ -41,7 +41,4 @@ yarn-error.log*
 next-env.d.ts
 
 # Terraform
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
-terraform/.terraform/
-terraform/.terraform.lock.hcl
+terraform/
