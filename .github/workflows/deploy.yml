@@ -72,8 +72,8 @@ jobs:
               --restart unless-stopped \
               -e HOSTNAME="0.0.0.0" \
               -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
-              -e GITHUB_ID="${{ secrets.GITHUB_ID }}" \
-              -e GITHUB_SECRET="${{ secrets.GITHUB_SECRET }}" \
+              -e GITHUB_ID="${{ secrets.GH_ID }}" \
+              -e GITHUB_SECRET="${{ secrets.GH_SECRET }}" \
               -e FACEBOOK_ID="${{ secrets.FACEBOOK_ID }}" \
               -e FACEBOOK_SECRET="${{ secrets.FACEBOOK_SECRET }}" \
               -e NEXTAUTH_URL="http://${{ secrets.EC2_HOST }}" \
