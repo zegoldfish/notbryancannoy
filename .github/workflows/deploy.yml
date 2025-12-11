@@ -21,6 +21,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          docker system prune -af
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -68,7 +76,8 @@ jobs:
             
             # Run new container with env vars
             docker run -d \
-              -p 80:3000 \
+              -p 3000:3000 \
+              --name nextjs \
               --restart unless-stopped \
               -e HOSTNAME="0.0.0.0" \
               -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
@@ -76,6 +85,6 @@ jobs:
               -e GITHUB_SECRET="${{ secrets.GH_SECRET }}" \
               -e FACEBOOK_ID="${{ secrets.FACEBOOK_ID }}" \
               -e FACEBOOK_SECRET="${{ secrets.FACEBOOK_SECRET }}" \
-              -e NEXTAUTH_URL="http://${{ secrets.EC2_HOST }}" \
+              -e NEXTAUTH_URL="https://notbryancannoy.com" \
               ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           ENDSSH
