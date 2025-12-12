@@ -9,8 +9,8 @@ export default function AdminPage() {
 
   return (
     <AdminGuard>
-      <main className="min-h-screen bg-slate-50 py-10 px-4">
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="min-h-screen bg-slate-50 py-10 px-4">
+        <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Admin Users</h1>
@@ -36,7 +36,7 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
-    </main>
+      </div>
     </AdminGuard>
   );
 }

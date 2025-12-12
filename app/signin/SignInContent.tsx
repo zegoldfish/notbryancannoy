@@ -13,7 +13,7 @@ export default function SignInContent() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-4">
         <h1 className="text-3xl font-bold text-center">Sign In</h1>
         {errorMessage && (
@@ -46,6 +46,6 @@ export default function SignInContent() {
           Sign in with Discord
         </button>
       </div>
-    </main>
+    </div>
   );
 }
