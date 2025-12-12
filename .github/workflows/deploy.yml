@@ -100,5 +100,7 @@ jobs:
               -e FACEBOOK_SECRET="${{ secrets.FACEBOOK_SECRET }}" \
               -e DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}" \
               -e DISCORD_CLIENT_SECRET="${{ secrets.DISCORD_CLIENT_SECRET }}" \
+              -e S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}" \
+              -e MAX_BYTES="10485760" \
               ${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
           ENDSSH
