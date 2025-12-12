@@ -81,6 +81,8 @@ jobs:
               --name nextjs \
               --restart unless-stopped \
               -e HOSTNAME="0.0.0.0" \
+              -e AWS_REGION="us-east-1" \
+              -e AWS_DEFAULT_REGION="us-east-1" \
               -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
               -e NEXTAUTH_URL="https://notbryancannoy.com" \
               -e GITHUB_ID="${{ secrets.GH_ID }}" \
