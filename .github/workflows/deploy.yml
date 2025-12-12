@@ -55,6 +55,7 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ec2-user
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           # Setup SSH
           mkdir -p ~/.ssh
@@ -67,8 +68,8 @@ jobs:
             # Login to ECR
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
-            # Pull latest image
-            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+            # Pull image for this commit
+            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
             
             # Stop old container
             docker stop $(docker ps -q) 2>/dev/null || true
@@ -88,5 +89,5 @@ jobs:
               -e FACEBOOK_SECRET="${{ secrets.FACEBOOK_SECRET }}" \
               -e DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}" \
               -e DISCORD_CLIENT_SECRET="${{ secrets.DISCORD_CLIENT_SECRET }}" \
-              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
           ENDSSH
