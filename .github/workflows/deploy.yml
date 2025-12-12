@@ -1,4 +1,4 @@
-name: Build and Push to ECR
+name: Build and Push to Docker Hub
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: notbryancannoy
+  DOCKER_REPOSITORY: notbryancannoy/notbryancannoy
 
 permissions:
   id-token: write
@@ -36,26 +36,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: Build, tag, and push image to Docker Hub
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build -t ${{ env.DOCKER_REPOSITORY }}:$IMAGE_TAG .
+          docker build -t ${{ env.DOCKER_REPOSITORY }}:latest .
+          docker push ${{ env.DOCKER_REPOSITORY }}:$IMAGE_TAG
+          docker push ${{ env.DOCKER_REPOSITORY }}:latest
 
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ec2-user
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           # Setup SSH
           mkdir -p ~/.ssh
@@ -65,11 +67,11 @@ jobs:
           
           # Deploy on EC2
           ssh -i ~/.ssh/ec2_key $EC2_USER@$EC2_HOST << 'ENDSSH'
-            # Login to ECR
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            # Login to Docker Hub
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             
             # Pull image for this commit
-            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            docker pull ${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
             
             # Stop old container
             docker stop $(docker ps -q) 2>/dev/null || true
@@ -91,5 +93,5 @@ jobs:
               -e FACEBOOK_SECRET="${{ secrets.FACEBOOK_SECRET }}" \
               -e DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}" \
               -e DISCORD_CLIENT_SECRET="${{ secrets.DISCORD_CLIENT_SECRET }}" \
-              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+              ${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
           ENDSSH
