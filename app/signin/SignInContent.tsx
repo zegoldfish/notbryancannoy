@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { FaDiscord, FaGithub, FaFacebook } from "react-icons/fa";
 
-function SignInContent() {
+export default function SignInContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   let errorMessage = null;
@@ -49,5 +49,3 @@ function SignInContent() {
     </main>
   );
 }
-
-export default SignInContent;
