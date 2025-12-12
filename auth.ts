@@ -60,6 +60,29 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
+    async jwt({ token, user, profile }) {
+      // When user signs in, fetch their isAdmin status from DynamoDB
+      if (user?.email) {
+        try {
+          const result = await dynamo.send(
+            new GetCommand({ TableName: EMAIL_TABLE, Key: { email: user.email } })
+          );
+          if (result.Item) {
+            token.isAdmin = result.Item.isAdmin || false;
+          }
+        } catch (err) {
+          console.error("Error fetching isAdmin status:", err);
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add isAdmin to the session object
+      if (session.user) {
+        session.user.isAdmin = token.isAdmin as boolean;
+      }
+      return session;
+    },
   },
 }
 
