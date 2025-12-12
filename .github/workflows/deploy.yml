@@ -67,16 +67,23 @@ jobs:
           
           # Deploy on EC2
           ssh -i ~/.ssh/ec2_key $EC2_USER@$EC2_HOST << 'ENDSSH'
+            # Free up disk space
+            sudo rm -rf /usr/share/dotnet
+            sudo rm -rf /opt/ghc
+            sudo rm -rf /usr/local/share/boost
+            sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+            docker system prune -af
+            
             # Login to Docker Hub
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            
+
             # Pull image for this commit
             docker pull ${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
             
             # Stop old container
             docker stop $(docker ps -q) 2>/dev/null || true
             docker rm $(docker ps -aq) 2>/dev/null || true
-            
+
             # Run new container with env vars
             docker run -d \
               -p 3000:3000 \
