@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/app/admin/hooks/useUsers";
 import UserTable from "./UserTable";
+import { AdminGuard } from "../AdminGuard";
 
 export default function UsersPage() {
   const [message, setMessage] = useState<string | null>(null);
@@ -28,7 +29,8 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 py-10 px-4">
+    <AdminGuard>
+      <main className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -102,5 +104,6 @@ export default function UsersPage() {
         </div>
       </div>
     </main>
+    </AdminGuard>
   );
 }

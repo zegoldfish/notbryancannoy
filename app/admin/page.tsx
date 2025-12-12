@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminGuard } from "./AdminGuard";
 import { useUsers } from "@/app/admin/hooks/useUsers";
 import UserTable from "./users/UserTable";
 
@@ -7,7 +8,8 @@ export default function AdminPage() {
   const { data: users = [], isLoading: loading, error } = useUsers();
 
   return (
-    <main className="min-h-screen bg-slate-50 py-10 px-4">
+    <AdminGuard>
+      <main className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -35,5 +37,6 @@ export default function AdminPage() {
         </section>
       </div>
     </main>
+    </AdminGuard>
   );
 }
