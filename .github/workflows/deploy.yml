@@ -81,10 +81,12 @@ jobs:
               --restart unless-stopped \
               -e HOSTNAME="0.0.0.0" \
               -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+              -e NEXTAUTH_URL="https://notbryancannoy.com" \
               -e GITHUB_ID="${{ secrets.GH_ID }}" \
               -e GITHUB_SECRET="${{ secrets.GH_SECRET }}" \
               -e FACEBOOK_ID="${{ secrets.FACEBOOK_ID }}" \
               -e FACEBOOK_SECRET="${{ secrets.FACEBOOK_SECRET }}" \
-              -e NEXTAUTH_URL="https://notbryancannoy.com" \
+              -e DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}" \
+              -e DISCORD_CLIENT_SECRET="${{ secrets.DISCORD_CLIENT_SECRET }}" \
               ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           ENDSSH
