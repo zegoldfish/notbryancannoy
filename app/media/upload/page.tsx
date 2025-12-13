@@ -5,6 +5,19 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@context/UserContext";
 import { getPresignedPost } from "./actions";
 import { createImage } from "@app/images/actions";
+import { analyzeImageWithPrompt } from "@app/claude/actions";
+import Image from "next/image";
+
+function normalizeTags(raw: string): string[] {
+	return Array.from(
+		new Set(
+			raw
+				.split(",")
+				.map((t) => t.trim())
+				.filter(Boolean)
+		)
+	);
+}
 
 export default function UploadFile() {
   const router = useRouter();
@@ -14,7 +27,10 @@ export default function UploadFile() {
   const [message, setMessage] = useState<string | undefined>(undefined);
   const [isError, setIsError] = useState(false);
   const [tagsInput, setTagsInput] = useState("");
+  const tags = normalizeTags(tagsInput);
   const [description, setDescription] = useState("");
+  const [suggesting, setSuggesting] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -27,10 +43,74 @@ export default function UploadFile() {
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (file && file.type.startsWith("image/")) {
+      setPreviewUrl(URL.createObjectURL(file));
       setFile(file);
     } else {
-      setFile(null);
+      setPreviewUrl(null);
+      setFile(file || null);
+    }
+  }
+
+  async function handleSuggest() {
+    if (!file) {
+      setMessage("Choose a file first.");
+      setIsError(true);
+      return;
+    }
+
+    setSuggesting(true);
+    setMessage(undefined);
+    setIsError(false);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+      const prompt =
+        "Return ONLY strict JSON in this shape: {\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings.";
+      const response = await analyzeImageWithPrompt({
+        imageBase64: base64,
+        mediaType: file.type as "image/png" | "image/jpeg" | "image/webp",
+        prompt,
+        maxTokens: 200,
+        temperature: 0,
+      });
+
+      let parsed: { tags?: string[]; description?: string } | null = null;
+      try {
+        parsed = JSON.parse(response.text || "{}");
+      } catch (err) {
+        // Fallback: attempt to extract a JSON object substring
+        try {
+          const match = (response.text || "").match(/\{[\s\S]*\}/);
+          if (match) parsed = JSON.parse(match[0]);
+        } catch (innerErr) {
+          console.warn("Failed to parse Claude suggestion JSON", innerErr);
+        }
+      }
+
+      if (parsed?.tags?.length) {
+        setTagsInput(normalizeTags(parsed.tags.join(", ")).join(", "));
+      }
+      if (parsed?.description) {
+        setDescription(parsed.description);
+      }
+
+      if (!parsed?.tags && !parsed?.description) {
+        setMessage("Claude responded but could not parse suggestions.");
+        setIsError(true);
+      } else {
+        setMessage("Suggestions applied. You can edit before upload.");
+        setIsError(false);
+      }
+    } catch (error) {
+      console.error("Suggest error", error);
+      setMessage("Failed to get suggestions from Claude.");
+      setIsError(true);
+    } finally {
+      setSuggesting(false);
     }
   }
 
@@ -76,10 +156,7 @@ export default function UploadFile() {
         setMessage("Failed to upload file to S3");
         setIsError(true);
       } else {
-        const tags = tagsInput
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean);
+        const tags = normalizeTags(tagsInput);
 
         const imageId = presignedResult.key;
         const createResult = await createImage({
@@ -144,6 +221,30 @@ export default function UploadFile() {
               {file && <p className="text-xs text-slate-500">Selected: {file.name}</p>}
             </div>
 
+            {previewUrl && (
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                <Image
+                  src={previewUrl}
+                  alt="Selected file preview"
+                  width={640}
+                  height={360}
+                  className="h-64 w-full object-cover"
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm text-slate-700">Need tags? Let Claude suggest them.</div>
+              <button
+                type="button"
+                onClick={handleSuggest}
+                disabled={suggesting || !file}
+                className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {suggesting ? "Getting suggestions..." : "Suggest tags & description"}
+              </button>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-800" htmlFor="tags">
                 Tags (comma-separated)
@@ -153,9 +254,35 @@ export default function UploadFile() {
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
+                onBlur={(e) => setTagsInput(normalizeTags(e.target.value).join(", "))}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 placeholder="e.g. sunset, landscape"
               />
+              {tags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {tags.map((tag, idx) => (
+                    <button
+                      type="button"
+                      key={`${tag}-${idx}`}
+                      onClick={() => {
+                        const filtered = tags.filter((_, i) => i !== idx);
+                        setTagsInput(filtered.join(", "));
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200 shadow-sm hover:bg-blue-100"
+                    >
+                      <span>{tag}</span>
+                      <span className="text-blue-500">×</span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setTagsInput("")}
+                    className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-100"
+                  >
+                    Clear tags
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
