@@ -37,7 +37,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, profile }) {
       console.log("Full user object:", user);
       console.log("Full profile object:", profile);
-      const email = user.email || profile?.email;
+      const email = (user.email || profile?.email)?.toLowerCase();
       console.log("Attempting sign-in for email:", email);
       const parsed = EmailSchema.safeParse({ email });
       if (!parsed.success) {
@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
       if (user?.email) {
         try {
           const result = await dynamo.send(
-            new GetCommand({ TableName: EMAIL_TABLE, Key: { email: user.email } })
+            new GetCommand({ TableName: EMAIL_TABLE, Key: { email: user.email.toLowerCase() } })
           );
           if (result.Item) {
             token.isAdmin = result.Item.isAdmin || false;
