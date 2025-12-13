@@ -357,7 +357,7 @@ export default function UploadFile() {
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         title={title || "Preview"}
-        description="Full-size preview of your upload"
+        description=""
       >
         {previewUrl && (
           <img src={previewUrl} alt="Preview" className="max-h-[70vh] w-full object-contain" />
