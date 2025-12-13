@@ -20,6 +20,10 @@ function normalizeTags(raw: string): string[] {
 	);
 }
 
+function isSafeBlobUrl(url: string | null): url is string {
+	return typeof url === "string" && url.startsWith("blob:");
+}
+
 export default function UploadFile() {
   const { session, status } = useUser();
   const [file, setFile] = useState<File | null>(null);
@@ -309,7 +313,7 @@ export default function UploadFile() {
               {file && <p className="text-xs text-slate-500">Selected: {file.name}</p>}
             </div>
 
-            {previewUrl && (
+            {isSafeBlobUrl(previewUrl) && (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                 <button
                   type="button"
@@ -442,7 +446,7 @@ export default function UploadFile() {
         title={title || "Preview"}
         description=""
       >
-        {previewUrl && (
+        {isSafeBlobUrl(previewUrl) && (
           <div className="relative w-full" style={{ minHeight: "50vh", maxHeight: "70vh" }}>
             <Image
               src={previewUrl}
