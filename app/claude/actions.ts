@@ -9,6 +9,15 @@ const bedrock = new BedrockRuntimeClient({
 	region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-west-2",
 });
 
+type MessageContent = 
+	| { type: "text"; text: string }
+	| { type: "image"; source: { type: "base64"; media_type: string; data: string } };
+
+type ConversationMessage = {
+	role: "user" | "assistant";
+	content: MessageContent[] | string;
+};
+
 export async function analyzeImageWithPrompt({
 	imageBase64,
 	mediaType = "image/png",
@@ -47,6 +56,52 @@ export async function analyzeImageWithPrompt({
 				],
 			},
 		],
+	};
+
+	const command = new InvokeModelCommand({
+		modelId: MODEL_ID,
+		contentType: "application/json",
+		accept: "application/json",
+		body: JSON.stringify(body),
+	});
+
+	const res = await bedrock.send(command);
+	const json = JSON.parse(new TextDecoder("utf-8").decode(res.body));
+
+	// Normalize Anthropic content
+	let text = "";
+	if (typeof json.output_text === "string") {
+		text = json.output_text;
+	} else if (Array.isArray(json.content)) {
+		text =
+			json.content
+				.filter((c: any) => c.type === "text" && typeof c.text === "string")
+				.map((c: any) => c.text)
+				.join("\n") || "";
+	}
+
+	return { raw: json, text };
+}
+
+export async function chatWithClaude({
+	messages,
+	maxTokens = 600,
+	temperature = 0.7,
+}: {
+	messages: ConversationMessage[];
+	maxTokens?: number;
+	temperature?: number;
+}) {
+	const session = await getServerSession();
+	if (!session) {
+		throw new Error("Unauthorized: sign in required");
+	}
+
+	const body = {
+		anthropic_version: "bedrock-2023-05-31",
+		max_tokens: maxTokens,
+		temperature,
+		messages,
 	};
 
 	const command = new InvokeModelCommand({
