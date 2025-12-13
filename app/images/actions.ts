@@ -9,7 +9,7 @@ import {
 	UpdateCommand,
 	ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
@@ -69,6 +69,13 @@ async function requireSession() {
 	const session = await getServerSession(authOptions);
 	if (!session) {
 		throw new Error("Unauthorized: sign in required");
+	}
+}
+
+async function requireAdmin() {
+	const session = await getServerSession(authOptions);
+	if (!session?.user?.isAdmin) {
+		throw new Error("Unauthorized: admin access required");
 	}
 }
 
@@ -199,9 +206,23 @@ export async function updateImage(imageId: string, updates: Record<string, any>)
 }
 
 export async function deleteImage(imageId: string) {
-	await requireSession();
+	await requireAdmin();
 	assertTable();
+	assertBucket();
+
 	if (!imageId) return { error: "imageId is required" };
+
+	try {
+		await s3.send(
+			new DeleteObjectCommand({
+				Bucket: S3_BUCKET_NAME,
+				Key: imageId,
+			})
+		);
+	} catch (error) {
+		console.error("deleteImage s3 error", error);
+		return { error: "Failed to delete file" };
+	}
 
 	try {
 		await dynamo.send(
@@ -213,7 +234,9 @@ export async function deleteImage(imageId: string) {
 		);
 		return { success: true };
 	} catch (error) {
-		console.error("deleteImage error", error);
-		return { error: "Failed to delete image" };
+		console.error("deleteImage dynamo error", error);
+		return { error: "Failed to delete metadata" };
 	}
 }
+
+

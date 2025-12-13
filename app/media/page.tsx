@@ -50,7 +50,7 @@ export default async function MediaPage() {
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {items.map((item: any) => (
-                            <ImageCard key={item.imageId} item={item} />
+                            <ImageCard key={item.imageId} item={item} isAdmin={Boolean(session.user?.isAdmin)} />
                         ))}
                     </div>
                 )}
