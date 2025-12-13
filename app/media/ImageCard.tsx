@@ -5,6 +5,7 @@ import Modal from "../components/Modal";
 
 type ImageItem = {
   imageId: string;
+  title?: string;
   description?: string;
   tags?: string[];
   url?: string;
