@@ -10,12 +10,7 @@ export default async function MediaPage() {
     
     if (!session) {
         return (
-            <Unauthorized
-                title="Ah ah ah..."
-                message="You did not say the magic word. Please sign in."
-                ctaHref="/signin"
-                ctaLabel="Go to sign in"
-            />
+            <Unauthorized />
         );
     }
 

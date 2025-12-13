@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useUser } from "@context/UserContext";
-import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { SignInButton } from "@app/components/SignInButton";
+import { SignOutButton } from "@app/components/SignOutButton";
 import { Avatar } from "./Avatar";
 
 type NavItem = {
@@ -61,13 +61,10 @@ export default function Nav() {
             {status === "authenticated" && (
               <>
                 <span className="text-sm text-slate-700">{session?.user?.email}</span>
-                <Avatar src={session?.user?.image} fallback={session?.user?.email?.[0] || "?"} size="md" />
-                <button
-                  onClick={() => signOut()}
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
-                >
-                  Sign out
-                </button>
+                <Link href="/user" className="mr-2">
+                  <Avatar src={session?.user?.image} fallback={session?.user?.email?.[0] || "?"} size="md" />
+                </Link>
+                <SignOutButton size="md" />
               </>
             )}
           </div>
@@ -87,12 +84,7 @@ export default function Nav() {
             <SignInButton size="sm" />
           )}
           {status === "authenticated" && (
-            <button
-              onClick={() => signOut()}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
-            >
-              Out
-            </button>
+            <SignOutButton size="sm" label="Sign Out" />
           )}
         </div>
       </div>

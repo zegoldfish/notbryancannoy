@@ -2,13 +2,22 @@
 
 import { signOut } from "next-auth/react";
 
-export function SignOutButton() {
-  return (
-    <button
-      onClick={() => signOut({ callbackUrl: "/" })}
-      className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
-    >
-      Sign out
-    </button>
-  );
+type SignOutButtonProps = {
+	size?: "sm" | "md";
+	label?: string;
+};
+
+export function SignOutButton({ size = "md", label = "Sign out" }: SignOutButtonProps) {
+	const sizeClasses = size === "sm" 
+		? "px-2 py-2 text-xs" 
+		: "px-3 py-2 text-sm";
+
+	return (
+		<button
+			onClick={() => signOut()}
+			className={`inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white ${sizeClasses} font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50`}
+		>
+			{label}
+		</button>
+	);
 }
