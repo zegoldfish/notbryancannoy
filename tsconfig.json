@@ -23,6 +23,7 @@
       "@/*": ["./*"],
       "@components/*": ["app/components/*"],
       "@context/*": ["app/context/*"],
+      "@app/*": ["app/*"],
     }
   },
   "include": [
