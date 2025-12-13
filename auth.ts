@@ -7,7 +7,7 @@ import { GetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const EMAIL_TABLE = "notbryancannoyUsers";
+const EMAIL_TABLE = process.env.EMAIL_TABLE;
 
 const EmailSchema = z.object({
   email: z.string().email(),
