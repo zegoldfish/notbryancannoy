@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@context/UserContext";
 import { getPresignedPost } from "./actions";
+import { createImage } from "@app/images/actions";
 
 export default function UploadFile() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export default function UploadFile() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | undefined>(undefined);
   const [isError, setIsError] = useState(false);
+  const [tagsInput, setTagsInput] = useState("");
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -73,12 +76,30 @@ export default function UploadFile() {
         setMessage("Failed to upload file to S3");
         setIsError(true);
       } else {
-        setMessage(`File "${file.name}" uploaded successfully!`);
-        setIsError(false);
-        setFile(null);
-        // Reset the input
-        const input = document.getElementById("file") as HTMLInputElement;
-        if (input) input.value = "";
+        const tags = tagsInput
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+
+        const imageId = presignedResult.key;
+        const createResult = await createImage({
+          imageId,
+          tags,
+          description,
+        });
+
+        if ("error" in createResult) {
+          setMessage(`Uploaded to S3 but failed to save metadata: ${createResult.error}`);
+          setIsError(true);
+        } else {
+          setMessage(`File "${file.name}" uploaded successfully!`);
+          setIsError(false);
+          setFile(null);
+          setTagsInput("");
+          setDescription("");
+          const input = document.getElementById("file") as HTMLInputElement;
+          if (input) input.value = "";
+        }
       }
     } catch (error) {
       console.error("Upload error:", error);
@@ -121,6 +142,34 @@ export default function UploadFile() {
                 className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 shadow-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
               />
               {file && <p className="text-xs text-slate-500">Selected: {file.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-800" htmlFor="tags">
+                Tags (comma-separated)
+              </label>
+              <input
+                id="tags"
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                placeholder="e.g. sunset, landscape"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-800" htmlFor="description">
+                Description
+              </label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                placeholder="Optional description of the upload"
+              />
             </div>
 
             <button
