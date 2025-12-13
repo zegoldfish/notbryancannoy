@@ -30,8 +30,8 @@ export function Unauthorized({
                 alt="Unauthorized"
                 width={480}
                 height={270}
-                className="h-auto max-h-64 w-auto rounded"
-                sizes="(max-width: 768px) 80vw, 320px"
+                className="h-auto w-full max-w-2xl rounded object-contain"
+                sizes="(max-width: 1024px) 90vw, 640px"
                 priority
               />
             </div>

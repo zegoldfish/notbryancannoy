@@ -28,7 +28,7 @@ export default function GlobalError({
               width={640}
               height={426}
               className="h-auto max-h-64 w-auto rounded"
-              sizes="(max-width: 768px) 80vw, 320px"
+              sizes="(max-width: 1024px) 90vw, 640px"
               priority
             />
           </div>
