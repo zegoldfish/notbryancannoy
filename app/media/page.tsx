@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { listImages } from "@app/images/actions";
-import ImageCard from "./ImageCard";
+import ImageCard from "@app/components/ImageCard";
 import { Unauthorized } from "@app/components/Unauthorized";
 import type { ImageItem } from "@/app/types";
 

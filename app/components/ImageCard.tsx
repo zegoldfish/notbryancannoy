@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { deleteImage } from "@app/images/actions";
-import Modal from "../components/Modal";
-import ConfirmationModal from "../components/ConfirmationModal";
+import Modal from "@app/components/Modal";
+import ConfirmationModal from "@app/components/ConfirmationModal";
 
 type ImageItem = {
   imageId: string;
