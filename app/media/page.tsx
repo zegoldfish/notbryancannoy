@@ -1,7 +1,16 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { redirect } from "next/navigation";
 import { listImages } from "@app/images/actions";
 import ImageCard from "./ImageCard";
 
 export default async function MediaPage() {
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+        redirect("/signin");
+    }
+
     const result = await listImages();
 
     if ("error" in result) {
