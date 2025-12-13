@@ -37,6 +37,7 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 	const [suggesting, setSuggesting] = useState(false);
 	const [previewOpen, setPreviewOpen] = useState(false);
 	const [temperature, setTemperature] = useState(0.3);
+	const [promptContext, setPromptContext] = useState("");
 
 	useEffect(() => {
 		if (status === "loading") return;
@@ -163,8 +164,13 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 		try {
 			const { base64, mediaType } = await getResizedBase64Adaptive(image.url);
 
-			const prompt =
+			let prompt =
 				"Return ONLY strict JSON in this shape: {\n  \"title\": string,\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings. Title should be short and descriptive.";
+			
+			if (promptContext.trim()) {
+				prompt = `${promptContext.trim()}\n\n${prompt}`;
+			}
+			
 			const response = await analyzeImageWithPrompt({
 				imageBase64: base64,
 				mediaType: mediaType as "image/jpeg",
@@ -313,6 +319,20 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 								/>
 							</div>
 							<p className="text-xs text-slate-500">Lower = more deterministic; higher = more creative.</p>
+							<div className="space-y-2 pt-2">
+								<label className="text-sm font-medium text-slate-700" htmlFor="promptContext">
+									Prompt Context (optional)
+								</label>
+								<textarea
+									id="promptContext"
+									value={promptContext}
+									onChange={(e) => setPromptContext(e.target.value)}
+									rows={2}
+									className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+									placeholder="Add context to guide Claude's suggestions (e.g., 'This is from a vacation in Paris' or 'Focus on the architectural elements')"
+								/>
+								<p className="text-xs text-slate-500">Provide additional context to help Claude better understand the image.</p>
+							</div>
 						</div>
 
 						<div className="space-y-2">
