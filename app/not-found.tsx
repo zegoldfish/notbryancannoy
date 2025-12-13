@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function NotFoundPage() {
@@ -12,7 +13,15 @@ export default function NotFoundPage() {
               We couldn&apos;t find the page you&apos;re looking for.
             </p>
             <div className="flex justify-center">
-              <img src="/images/what-is-happening.jpg" alt="404 - Page not found" className="max-h-64 rounded" />
+              <Image
+                src="/images/what-is-happening.jpg"
+                alt="404 - Page not found"
+                width={640}
+                height={426}
+                className="h-auto w-full max-w-2xl rounded object-contain"
+                sizes="(max-width: 1024px) 90vw, 640px"
+                priority
+              />
             </div>
             <Link
               href="/"

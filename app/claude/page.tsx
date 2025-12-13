@@ -1,7 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -124,11 +123,14 @@ export default function ClaudePage() {
 								}`}
 							>
 								{msg.imageUrl && (
-									<div className="mb-2">
-										<img
+									<div className="mb-2 relative h-48 w-full overflow-hidden rounded-lg">
+										<Image
 											src={msg.imageUrl}
 											alt="Uploaded"
-											className="max-h-48 rounded-lg object-cover"
+											fill
+											className="object-cover"
+											sizes="(min-width: 1024px) 400px, 100vw"
+											unoptimized
 										/>
 									</div>
 								)}

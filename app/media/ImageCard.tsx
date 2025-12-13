@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { deleteImage } from "@app/images/actions";
 import Modal from "../components/Modal";
@@ -72,11 +73,16 @@ export default function ImageCard({ item, isAdmin = false }: Props) {
 
       {src ? (
         <button onClick={() => setOpen(true)} className="mb-3 overflow-hidden rounded-xl">
-          <img
-            src={src}
-            alt={item.description || "Image"}
-            className="h-52 w-full rounded-xl object-cover sm:h-56"
-          />
+          <div className="relative h-52 w-full sm:h-56">
+            <Image
+              src={src}
+              alt={item.description || "Image"}
+              fill
+              className="rounded-xl object-cover"
+              sizes="(min-width: 640px) 24rem, 100vw"
+              unoptimized
+            />
+          </div>
         </button>
       ) : null}
 
@@ -112,7 +118,16 @@ export default function ImageCard({ item, isAdmin = false }: Props) {
         description={item.description}
       >
         {src ? (
-          <img src={src} alt={item.description || "Image"} className="max-h-[70vh] w-full object-contain" />
+          <div className="relative w-full" style={{ minHeight: "50vh", maxHeight: "70vh" }}>
+            <Image
+              src={src}
+              alt={item.description || "Image"}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              unoptimized
+            />
+          </div>
         ) : null}
       </Modal>
 

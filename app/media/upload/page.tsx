@@ -443,7 +443,16 @@ export default function UploadFile() {
         description=""
       >
         {previewUrl && (
-          <img src={previewUrl} alt="Preview" className="max-h-[70vh] w-full object-contain" />
+          <div className="relative w-full" style={{ minHeight: "50vh", maxHeight: "70vh" }}>
+            <Image
+              src={previewUrl}
+              alt="Preview"
+              fill
+              className="object-contain"
+              sizes="100vw"
+              unoptimized
+            />
+          </div>
         )}
       </Modal>
     </div>

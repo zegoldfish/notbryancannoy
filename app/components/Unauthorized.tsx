@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { SignInButton } from "@app/components/SignInButton";
 
@@ -24,7 +25,15 @@ export function Unauthorized({
             <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
             <p className="text-sm text-slate-600">{message}</p>
             <div className="flex justify-center">
-              <img src="/images/ah-ah-ah.gif" alt="Unauthorized" className="max-h-64 rounded" />
+              <Image
+                src="/images/ah-ah-ah.gif"
+                alt="Unauthorized"
+                width={480}
+                height={270}
+                className="h-auto max-h-64 w-auto rounded"
+                sizes="(max-width: 768px) 80vw, 320px"
+                priority
+              />
             </div>
             <SignInButton href={ctaHref} label={ctaLabel} size="lg" className="px-4 py-2" />
             {children}

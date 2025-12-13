@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Modal from "./Modal";
 import { ReactNode } from "react";
 
@@ -73,10 +74,13 @@ export default function ConfirmationModal({
     >
       <div className="space-y-4">
         <div className="flex justify-center">
-          <img
+          <Image
             src="/images/you-sure-about-that.jpg"
             alt="Confirmation"
-            className="max-h-48 rounded-lg object-cover"
+            width={640}
+            height={360}
+            className="h-auto max-h-48 w-auto rounded-lg object-cover"
+            sizes="(max-width: 768px) 80vw, 320px"
           />
         </div>
         {children && <div className="text-sm text-slate-700">{children}</div>}

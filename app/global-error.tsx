@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 // Global error boundary for all 5xx-style unhandled errors in the App Router.
@@ -21,7 +22,15 @@ export default function GlobalError({
             An unexpected error occurred. You can try again or head back home.
           </p>
           <div className="flex justify-center">
-            <img src="/images/what-is-happening.jpg" alt="Error" className="max-h-64 rounded" />
+            <Image
+              src="/images/what-is-happening.jpg"
+              alt="Error"
+              width={640}
+              height={426}
+              className="h-auto max-h-64 w-auto rounded"
+              sizes="(max-width: 768px) 80vw, 320px"
+              priority
+            />
           </div>
           {error?.digest && (
             <p className="text-xs text-slate-400">Error id: {error.digest}</p>
