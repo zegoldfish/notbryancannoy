@@ -9,28 +9,60 @@ import {
 	UpdateCommand,
 	ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { z } from "zod";
 
 const ImageSchema = z.object({
 	imageId: z.string().min(1, "imageId is required"),
+	title: z.string().default(""),
 	tags: z.array(z.string()).default([]),
 	description: z.string().default(""),
 });
 
 const UpdateImageSchema = z.object({
+	title: z.string().optional(),
 	tags: z.array(z.string()).optional(),
 	description: z.string().optional(),
 });
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const s3 = new S3Client({});
 const IMAGES_TABLE = process.env.IMAGES_TABLE;
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+
+// Simple in-memory cache for presigned URLs, keyed by S3 object key.
+// This lives for the lifetime of the server process and avoids repeated presigning.
+const presignCache: Map<string, { url: string; expiresAt: number }> = new Map();
 
 function assertTable() {
 	if (!IMAGES_TABLE) {
 		throw new Error("IMAGES_TABLE is not configured");
 	}
+}
+
+function assertBucket() {
+	if (!S3_BUCKET_NAME) {
+		throw new Error("S3_BUCKET_NAME is not configured");
+	}
+}
+
+async function presignImage(key: string, expiresIn = 900) {
+	assertBucket();
+	const now = Date.now();
+	const cached = presignCache.get(key);
+	if (cached && cached.expiresAt > now + 1000) {
+		return cached.url;
+	}
+
+	const command = new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key });
+	const url = await getSignedUrl(s3, command, { expiresIn });
+	// Cache a bit shorter than actual expiry to be safe (subtract 2 seconds)
+	const expiresAt = now + (expiresIn * 1000) - 2000;
+	presignCache.set(key, { url, expiresAt });
+	return url;
 }
 
 async function requireSession() {
@@ -90,6 +122,7 @@ export async function getImage(imageId: string) {
 export async function listImages(limit = 50) {
 	await requireSession();
 	assertTable();
+	assertBucket();
 	try {
 		const result = await dynamo.send(
 			new ScanCommand({
@@ -97,7 +130,22 @@ export async function listImages(limit = 50) {
 				Limit: limit,
 			})
 		);
-		return { success: true, items: result.Items || [], lastEvaluatedKey: result.LastEvaluatedKey };
+
+		const items = result.Items || [];
+		const withUrls = await Promise.all(
+			items.map(async (item: any) => {
+				if (!item?.imageId) return item;
+				try {
+					const url = await presignImage(item.imageId);
+					return { ...item, url };
+				} catch (err) {
+					console.warn("presign error", err);
+					return item;
+				}
+			})
+		);
+
+		return { success: true, items: withUrls, lastEvaluatedKey: result.LastEvaluatedKey };
 	} catch (error) {
 		console.error("listImages error", error);
 		return { error: "Failed to list images" };
