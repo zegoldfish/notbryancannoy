@@ -5,6 +5,7 @@ import { useState } from "react";
 import { deleteImage } from "@app/images/actions";
 import Modal from "@app/components/Modal";
 import ConfirmationModal from "@app/components/ConfirmationModal";
+import Link from "next/link";
 
 type ImageItem = {
   imageId: string;
@@ -19,9 +20,10 @@ type ImageItem = {
 type Props = {
   item: ImageItem;
   canDelete?: boolean;
+  canEdit?: boolean;
 };
 
-export default function ImageCard({ item, canDelete = false }: Props) {
+export default function ImageCard({ item, canDelete = false, canEdit = false }: Props) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -70,6 +72,14 @@ export default function ImageCard({ item, canDelete = false }: Props) {
             {deleting ? "Deleting..." : "Delete"}
           </button>
         )}
+        {canEdit && (<div>
+          <Link
+            href={`/media/edit/${item.imageId}`}
+            className="self-start inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          >
+            Edit
+          </Link>
+        </div>)}
       </div>
 
       {src ? (

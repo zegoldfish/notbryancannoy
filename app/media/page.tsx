@@ -52,6 +52,7 @@ export default async function MediaPage() {
                                 key={item.imageId}
                                 item={item}
                                 canDelete={Boolean(session.user?.isAdmin || (sessionUserId && item.userId === sessionUserId))}
+                                canEdit={Boolean(session.user?.isAdmin || (sessionUserId && item.userId === sessionUserId))}
                             />
                         ))}
                     </div>

@@ -105,6 +105,7 @@ export async function createImage(item: ImageCreatePayload) {
 export async function getImage(imageId: string) {
 	await requireSession();
 	assertTable();
+	assertBucket();
 
 	if (!imageId) return { error: "imageId is required" };
 	try {
@@ -115,7 +116,15 @@ export async function getImage(imageId: string) {
 			})
 		);
 		if (!result.Item) return { error: "Not found" };
-		return { success: true, item: result.Item };
+		
+		const item = result.Item as ImageItem;
+		try {
+			const url = await presignImage(imageId);
+			return { success: true, item: { ...item, url } };
+		} catch (err) {
+			console.warn("presign error", err);
+			return { success: true, item };
+		}
 	} catch (error) {
 		console.error("getImage error", error);
 		return { error: "Failed to fetch image" };
