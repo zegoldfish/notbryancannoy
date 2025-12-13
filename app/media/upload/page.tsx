@@ -157,6 +157,7 @@ export default function UploadFile() {
       try {
         parsed = JSON.parse(response.text || "{}");
       } catch (err) {
+        console.warn("Failed to parse Claude suggestion JSON", err);
         // Fallback: attempt to extract a JSON object substring
         try {
           const match = (response.text || "").match(/\{[\s\S]*\}/);

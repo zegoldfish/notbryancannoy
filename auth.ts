@@ -60,7 +60,7 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, profile }) {
+    async jwt({ token, user }) {
       // When user signs in, fetch their isAdmin status from DynamoDB
       if (user?.email) {
         try {

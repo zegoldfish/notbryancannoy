@@ -14,6 +14,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { z } from "zod";
+import type { ImageItem, ImageCreatePayload, ImageUpdatePayload } from "@/app/types";
 
 const ImageSchema = z.object({
 	imageId: z.string().min(1, "imageId is required"),
@@ -79,7 +80,7 @@ async function requireAdmin() {
 	}
 }
 
-export async function createImage(item: Record<string, any>) {
+export async function createImage(item: ImageCreatePayload) {
 	await requireSession();
 	assertTable();
 
@@ -89,7 +90,6 @@ export async function createImage(item: Record<string, any>) {
 	}
 
 	const data = parsed.data;
-	const imageId = data.imageId;
 
 	try {
 		await dynamo.send(
@@ -138,9 +138,9 @@ export async function listImages(limit = 50) {
 			})
 		);
 
-		const items = result.Items || [];
+		const items = (result.Items || []) as ImageItem[];
 		const withUrls = await Promise.all(
-			items.map(async (item: any) => {
+			items.map(async (item) => {
 				if (!item?.imageId) return item;
 				try {
 					const url = await presignImage(item.imageId);
@@ -159,7 +159,7 @@ export async function listImages(limit = 50) {
 	}
 }
 
-export async function updateImage(imageId: string, updates: Record<string, any>) {
+export async function updateImage(imageId: string, updates: ImageUpdatePayload) {
 	await requireSession();
 	assertTable();
 	if (!imageId) return { error: "imageId is required" };
@@ -181,8 +181,9 @@ export async function updateImage(imageId: string, updates: Record<string, any>)
 		acc[`#k${index}`] = key;
 		return acc;
 	}, {});
-	const ExpressionAttributeValues = keys.reduce<Record<string, any>>((acc, key, index) => {
-		acc[`:v${index}`] = clean[key];
+	const ExpressionAttributeValues = keys.reduce<Record<string, string | string[]>>((acc, key, index) => {
+		const value = clean[key as keyof typeof clean];
+		acc[`:v${index}`] = value;
 		return acc;
 	}, {});
 

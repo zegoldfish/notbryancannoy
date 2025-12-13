@@ -60,6 +60,7 @@ export async function addUserAction(formData: FormData) {
     );
     return { success: true };
   } catch (err) {
+    console.error("addUserAction error", err);
     return { error: "Failed to add user." };
   }
 }

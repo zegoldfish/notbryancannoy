@@ -2,21 +2,13 @@
 
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { getServerSession } from "next-auth";
+import type { AnthropicResponse, ConversationMessage } from "@/app/types";
 
 const MODEL_ID = process.env.BEDROCK_MODEL_ID;
 
 const bedrock = new BedrockRuntimeClient({
 	region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-west-2",
 });
-
-type MessageContent = 
-	| { type: "text"; text: string }
-	| { type: "image"; source: { type: "base64"; media_type: string; data: string } };
-
-type ConversationMessage = {
-	role: "user" | "assistant";
-	content: MessageContent[] | string;
-};
 
 export async function analyzeImageWithPrompt({
 	imageBase64,
@@ -66,7 +58,7 @@ export async function analyzeImageWithPrompt({
 	});
 
 	const res = await bedrock.send(command);
-	const json = JSON.parse(new TextDecoder("utf-8").decode(res.body));
+	const json = JSON.parse(new TextDecoder("utf-8").decode(res.body)) as AnthropicResponse;
 
 	// Normalize Anthropic content
 	let text = "";
@@ -75,8 +67,8 @@ export async function analyzeImageWithPrompt({
 	} else if (Array.isArray(json.content)) {
 		text =
 			json.content
-				.filter((c: any) => c.type === "text" && typeof c.text === "string")
-				.map((c: any) => c.text)
+				.filter((c): c is { type: string; text: string } => c.type === "text" && typeof c.text === "string")
+				.map((c) => c.text)
 				.join("\n") || "";
 	}
 
@@ -112,7 +104,7 @@ export async function chatWithClaude({
 	});
 
 	const res = await bedrock.send(command);
-	const json = JSON.parse(new TextDecoder("utf-8").decode(res.body));
+	const json = JSON.parse(new TextDecoder("utf-8").decode(res.body)) as AnthropicResponse;
 
 	// Normalize Anthropic content
 	let text = "";
@@ -121,8 +113,8 @@ export async function chatWithClaude({
 	} else if (Array.isArray(json.content)) {
 		text =
 			json.content
-				.filter((c: any) => c.type === "text" && typeof c.text === "string")
-				.map((c: any) => c.text)
+				.filter((c): c is { type: string; text: string } => c.type === "text" && typeof c.text === "string")
+				.map((c) => c.text)
 				.join("\n") || "";
 	}
 

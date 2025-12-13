@@ -1,49 +1,27 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+/* eslint-disable @next/next/no-img-element */
+
+import { useEffect, useRef } from "react";
 import { useUser } from "@context/UserContext";
-import { chatWithClaude } from "./actions";
 import { Unauthorized } from "@app/components/Unauthorized";
-
-async function fileToBase64(file: File) {
-	const arrayBuffer = await file.arrayBuffer();
-	const bytes = new Uint8Array(arrayBuffer);
-	let binary = "";
-	for (let i = 0; i < bytes.byteLength; i += 1) {
-		binary += String.fromCharCode(bytes[i]);
-	}
-	return btoa(binary);
-}
-
-type MessageContent = 
-	| { type: "text"; text: string }
-	| { type: "image"; source: { type: "base64"; media_type: string; data: string } };
-
-type APIMessage = {
-	role: "user" | "assistant";
-	content: MessageContent[] | string;
-};
-
-type DisplayMessage = {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-	imageUrl?: string;
-	timestamp: number;
-};
+import { useClaude } from "./useClaude";
 
 export default function ClaudePage() {
 	const { session, status } = useUser();
-
-	const [file, setFile] = useState<File | null>(null);
-	const [imageUrl, setImageUrl] = useState<string | null>(null);
-	const [imageBase64, setImageBase64] = useState<string | null>(null);
-	const [mediaType, setMediaType] = useState<"image/png" | "image/jpeg" | "image/webp" | null>(null);
-	const [question, setQuestion] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [messages, setMessages] = useState<DisplayMessage[]>([]);
-	const [conversationHistory, setConversationHistory] = useState<APIMessage[]>([]);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	const {
+		file,
+		imageBase64,
+		question,
+		setQuestion,
+		loading,
+		messages,
+		handleFileChange,
+		handleAskQuestion,
+		handleClearChat,
+	} = useClaude();
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,121 +33,6 @@ export default function ClaudePage() {
 
 	if (status === "unauthenticated" || !session) {
 		return <Unauthorized />;
-	}
-
-	async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-		const nextFile = event.target.files?.[0] ?? null;
-		setFile(nextFile);
-
-		if (imageUrl) URL.revokeObjectURL(imageUrl);
-
-		if (nextFile) {
-			const url = URL.createObjectURL(nextFile);
-			setImageUrl(url);
-			const base64 = await fileToBase64(nextFile);
-			setImageBase64(base64);
-			setMediaType(nextFile.type as "image/png" | "image/jpeg" | "image/webp");
-
-			// Add system message about uploaded image
-			setMessages((prev) => [
-				...prev,
-				{
-					id: Date.now().toString(),
-					role: "user",
-					content: "📎 Uploaded an image",
-					imageUrl: url,
-					timestamp: Date.now(),
-				},
-			]);
-		} else {
-			setImageUrl(null);
-			setImageBase64(null);
-			setMediaType(null);
-		}
-	}
-
-	async function handleAskQuestion(event: React.FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-
-		if (!question.trim()) return;
-
-		const userMessage: DisplayMessage = {
-			id: Date.now().toString(),
-			role: "user",
-			content: question,
-			timestamp: Date.now(),
-		};
-
-		setMessages((prev) => [...prev, userMessage]);
-		setQuestion("");
-		setLoading(true);
-
-		try {
-			// Build content array for this user message
-			const content: MessageContent[] = [];
-			
-			// Include image if available (only on first question after upload, or keep in context)
-			if (imageBase64 && mediaType) {
-				content.push({
-					type: "image",
-					source: {
-						type: "base64",
-						media_type: mediaType,
-						data: imageBase64,
-					},
-				});
-			}
-			
-			content.push({ type: "text", text: question });
-
-			// Build new conversation history with this turn
-			const newHistory: APIMessage[] = [
-				...conversationHistory,
-				{ role: "user", content },
-			];
-
-			const response = await chatWithClaude({
-				messages: newHistory,
-				maxTokens: 600,
-				temperature: 0.7,
-			});
-
-			const assistantMessage: DisplayMessage = {
-				id: (Date.now() + 1).toString(),
-				role: "assistant",
-				content: response.text || "No response returned.",
-				timestamp: Date.now(),
-			};
-
-			setMessages((prev) => [...prev, assistantMessage]);
-			
-			// Update conversation history with assistant response
-			setConversationHistory([
-				...newHistory,
-				{ role: "assistant", content: response.text || "No response." },
-			]);
-		} catch (error) {
-			console.error("Chat error", error);
-			const errorMessage: DisplayMessage = {
-				id: (Date.now() + 1).toString(),
-				role: "assistant",
-				content: "Failed to get a response. Please try again.",
-				timestamp: Date.now(),
-			};
-			setMessages((prev) => [...prev, errorMessage]);
-		} finally {
-			setLoading(false);
-		}
-	}
-
-	function handleClearChat() {
-		setMessages([]);
-		setConversationHistory([]);
-		setFile(null);
-		setImageUrl(null);
-		setImageBase64(null);
-		setMediaType(null);
-		setQuestion("");
 	}
 
 	return (
@@ -261,7 +124,7 @@ export default function ClaudePage() {
 								onKeyDown={(e) => {
 									if (e.key === "Enter" && !e.shiftKey) {
 										e.preventDefault();
-										handleAskQuestion(e as any);
+										handleAskQuestion(e);
 									}
 								}}
 								rows={1}

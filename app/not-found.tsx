@@ -9,7 +9,7 @@ export default function NotFoundPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-orange-500">404 Not Found</p>
             <h1 className="text-2xl font-semibold text-slate-900">What is happening?</h1>
             <p className="text-sm text-slate-600">
-              We couldn't find the page you're looking for.
+              We couldn&apos;t find the page you&apos;re looking for.
             </p>
             <div className="flex justify-center">
               <img src="/images/what-is-happening.jpg" alt="404 - Page not found" className="max-h-64 rounded" />

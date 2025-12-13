@@ -12,7 +12,6 @@ const ALLOWED_TYPES = new Set([
   "image/webp",
   "video/mp4",
 ]);
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function getPresignedPost(fileName: string, fileType: string) {
   const session = await getServerSession();

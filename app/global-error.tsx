@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 // Global error boundary for all 5xx-style unhandled errors in the App Router.
 // Must render html/body because it replaces the root layout when triggered.
 export default function GlobalError({
@@ -31,12 +33,12 @@ export default function GlobalError({
             >
               Try again
             </button>
-            <a
+            <Link
               href="/"
               className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
             >
               Go home
-            </a>
+            </Link>
           </div>
         </div>
       </body>
