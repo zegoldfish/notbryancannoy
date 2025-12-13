@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { Unauthorized } from "@app/components/Unauthorized";
 import { SignOutButton } from "@app/components/SignOutButton";
-import { Sign } from "crypto";
 
 export default async function UserPage() {
     const session = await getServerSession(authOptions);
