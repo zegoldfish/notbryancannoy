@@ -50,9 +50,9 @@ export default function ImageCard({ item, isAdmin = false }: Props) {
 
   return (
     <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-start justify-between gap-2">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         {item.title ? (
-          <div className="text-base font-semibold text-slate-900 truncate" title={item.title}>
+          <div className="text-base font-semibold text-slate-900 line-clamp-2" title={item.title}>
             {item.title}
           </div>
         ) : (
@@ -63,7 +63,7 @@ export default function ImageCard({ item, isAdmin = false }: Props) {
             type="button"
             onClick={() => setShowConfirmDelete(true)}
             disabled={deleting}
-            className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="self-start inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {deleting ? "Deleting..." : "Delete"}
           </button>
@@ -71,17 +71,17 @@ export default function ImageCard({ item, isAdmin = false }: Props) {
       </div>
 
       {src ? (
-        <button onClick={() => setOpen(true)} className="mb-3">
+        <button onClick={() => setOpen(true)} className="mb-3 overflow-hidden rounded-xl">
           <img
             src={src}
             alt={item.description || "Image"}
-            className="h-48 w-full rounded-xl object-cover"
+            className="h-52 w-full rounded-xl object-cover sm:h-56"
           />
         </button>
       ) : null}
 
       {item.description && (
-        <p className="mb-3 text-sm text-slate-700 whitespace-pre-line">{item.description}</p>
+        <p className="mb-3 text-sm text-slate-700 whitespace-pre-line line-clamp-3">{item.description}</p>
       )}
 
       {error && (
