@@ -250,10 +250,16 @@ export default function UploadFile() {
         } else {
           setMessage(`File "${file.name}" uploaded successfully!`);
           setIsError(false);
+          
+          // Reset form completely
           setFile(null);
           setTagsInput("");
           setTitle("");
           setDescription("");
+          if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+          }
           const input = document.getElementById("file") as HTMLInputElement;
           if (input) input.value = "";
         }
