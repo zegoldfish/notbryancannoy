@@ -6,7 +6,7 @@ import { authOptions } from "@/auth";
 import { z } from "zod";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-const EMAIL_TABLE = "notbryancannoyUsers";
+const EMAIL_TABLE = process.env.EMAIL_TABLE;
 
 // Helper to check admin access
 async function requireAdminAccess() {
