@@ -3,9 +3,61 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useRef } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import { useUser } from "@context/UserContext";
 import { Unauthorized } from "@app/components/Unauthorized";
 import { useClaude } from "./useClaude";
+
+type CodeProps = {
+	inline?: boolean;
+	className?: string;
+	children?: React.ReactNode;
+};
+
+const Code = ({ inline, className, children }: CodeProps) => {
+	const isBlock = !inline && className?.includes("language-");
+	if (isBlock) {
+		return (
+			<pre className="text-sm bg-slate-900/80 text-slate-100 rounded-lg p-3 overflow-x-auto">
+				<code className={className}>{children}</code>
+			</pre>
+		);
+	}
+	return (
+		<code className="px-1 py-0.5 rounded bg-slate-100 text-[0.9em]">
+			{children}
+		</code>
+	);
+};
+
+const markdownComponents: Components = {
+	p: (props) => <p className="text-sm leading-relaxed text-inherit mb-2 last:mb-0" {...props} />,
+	ul: (props) => <ul className="text-sm list-disc pl-5 space-y-1" {...props} />,
+	ol: (props) => <ol className="text-sm list-decimal pl-5 space-y-1" {...props} />,
+	li: (props) => <li className="text-inherit" {...props} />,
+	strong: (props) => <strong className="font-semibold" {...props} />,
+	em: (props) => <em className="italic" {...props} />,
+	code: Code,
+	a: (props) => <a className="underline text-sky-700 hover:text-sky-900" target="_blank" rel="noreferrer" {...props} />, // safe because sanitized
+	blockquote: (props) => <blockquote className="border-l-4 border-slate-300 pl-3 text-sm text-inherit" {...props} />,
+	table: (props) => <table className="w-full text-sm border-collapse" {...props} />,
+	th: (props) => <th className="border border-slate-200 px-2 py-1 text-left" {...props} />,
+	td: (props) => <td className="border border-slate-200 px-2 py-1 align-top" {...props} />,
+};
+
+function MarkdownContent({ content }: { content: string }) {
+	return (
+		<ReactMarkdown
+			rehypePlugins={[rehypeSanitize]}
+			remarkPlugins={[remarkGfm]}
+			components={markdownComponents}
+		>
+			{content}
+		</ReactMarkdown>
+	);
+}
 
 export default function ClaudePage() {
 	const { session, status } = useUser();
@@ -80,7 +132,7 @@ export default function ClaudePage() {
 										/>
 									</div>
 								)}
-								<p className="text-sm whitespace-pre-line">{msg.content}</p>
+								<MarkdownContent content={msg.content} />
 							</div>
 						</div>
 					))}
