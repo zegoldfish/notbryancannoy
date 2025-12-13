@@ -5,6 +5,7 @@ import { useUser } from "@context/UserContext";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { SignInButton } from "@app/components/SignInButton";
+import { Avatar } from "./Avatar";
 
 type NavItem = {
   href: string;
@@ -60,6 +61,7 @@ export default function Nav() {
             {status === "authenticated" && (
               <>
                 <span className="text-sm text-slate-700">{session?.user?.email}</span>
+                <Avatar src={session?.user?.image} fallback={session?.user?.email?.[0] || "?"} size="md" />
                 <button
                   onClick={() => signOut()}
                   className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
