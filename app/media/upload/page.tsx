@@ -347,6 +347,7 @@ export default function UploadFile() {
                   className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
+              <p className="text-xs text-slate-500">Lower = more deterministic; higher = more creative.</p>
             </div>
 
             <div className="space-y-2">
