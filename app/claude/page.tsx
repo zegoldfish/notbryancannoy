@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useUser } from "@context/UserContext";
 import { analyzeImageWithPrompt } from "./actions";
+import { Unauthorized } from "@app/components/Unauthorized";
 
 async function fileToBase64(file: File) {
 	const arrayBuffer = await file.arrayBuffer();
@@ -16,7 +16,6 @@ async function fileToBase64(file: File) {
 }
 
 export default function ClaudePage() {
-	const router = useRouter();
 	const { session, status } = useUser();
 
 	const [file, setFile] = useState<File | null>(null);
@@ -28,16 +27,23 @@ export default function ClaudePage() {
 	const [raw, setRaw] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (status === "unauthenticated") {
-			router.push("/signin");
-		}
-	}, [status, router]);
+		// no redirect; handled via inline unauthorized UI
+	}, [status]);
 
 	if (status === "loading") {
 		return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 	}
 
-	if (!session) return null;
+	if (status === "unauthenticated" || !session) {
+		return (
+			<Unauthorized
+				title="Ah ah ah..."
+				message="You did not say the magic word. Please sign in."
+				ctaHref="/signin"
+				ctaLabel="Go to sign in"
+			/>
+		);
+	}
 
 	function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const nextFile = event.target.files?.[0] ?? null;

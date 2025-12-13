@@ -1,14 +1,21 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
-import { redirect } from "next/navigation";
 import { listImages } from "@app/images/actions";
 import ImageCard from "./ImageCard";
+import { Unauthorized } from "@app/components/Unauthorized";
 
 export default async function MediaPage() {
     const session = await getServerSession(authOptions);
     
     if (!session) {
-        redirect("/signin");
+        return (
+            <Unauthorized
+                title="Ah ah ah..."
+                message="You did not say the magic word. Please sign in."
+                ctaHref="/signin"
+                ctaLabel="Go to sign in"
+            />
+        );
     }
 
     const result = await listImages();

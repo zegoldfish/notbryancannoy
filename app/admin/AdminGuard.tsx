@@ -1,20 +1,34 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { useUser } from "@context/UserContext";
+import { Unauthorized } from "@app/components/Unauthorized";
 
-export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+export function AdminGuard({ children }: { children: ReactNode }) {
   const { session, status } = useUser();
 
-  useEffect(() => {
-    if (status === "unauthenticated" || (status === "authenticated" && !session?.user?.isAdmin)) {
-      router.push("/");
-    }
-  }, [status, session, router]);
-
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!session?.user?.isAdmin) return null;
+
+  if (status === "unauthenticated") {
+    return (
+      <Unauthorized
+        title="Ah ah ah..."
+        message="You did not say the magic word. Please sign in to continue."
+        ctaHref="/signin"
+        ctaLabel="Go to sign in"
+      />
+    );
+  }
+
+  if (!session?.user?.isAdmin) {
+    return (
+      <Unauthorized
+        title="Admins only"
+        message="You did not say the magic word. Access is limited to administrators."
+        ctaHref="/"
+        ctaLabel="Return home"
+      />
+    );
+  }
 
   return <>{children}</>;
 }

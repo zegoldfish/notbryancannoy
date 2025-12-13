@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useUser } from "@context/UserContext";
 import { getPresignedPost } from "./actions";
 import { createImage } from "@app/images/actions";
 import { analyzeImageWithPrompt } from "@app/claude/actions";
 import Image from "next/image";
 import Modal from "@app/components/Modal";
+import { Unauthorized } from "@app/components/Unauthorized";
 
 function normalizeTags(raw: string): string[] {
 	return Array.from(
@@ -21,7 +21,6 @@ function normalizeTags(raw: string): string[] {
 }
 
 export default function UploadFile() {
-  const router = useRouter();
   const { session, status } = useUser();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -36,14 +35,17 @@ export default function UploadFile() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [temperature, setTemperature] = useState(0.3);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/signin");
-    }
-  }, [status, router]);
-
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!session) return null;
+  if (status === "unauthenticated" || !session) {
+    return (
+      <Unauthorized
+        title="Ah ah ah..."
+        message="You did not say the magic word. Please sign in."
+        ctaHref="/signin"
+        ctaLabel="Go to sign in"
+      />
+    );
+  }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
