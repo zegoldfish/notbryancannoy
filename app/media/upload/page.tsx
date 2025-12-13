@@ -7,6 +7,7 @@ import { getPresignedPost } from "./actions";
 import { createImage } from "@app/images/actions";
 import { analyzeImageWithPrompt } from "@app/claude/actions";
 import Image from "next/image";
+import Modal from "@app/components/Modal";
 
 function normalizeTags(raw: string): string[] {
 	return Array.from(
@@ -28,9 +29,12 @@ export default function UploadFile() {
   const [isError, setIsError] = useState(false);
   const [tagsInput, setTagsInput] = useState("");
   const tags = normalizeTags(tagsInput);
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [suggesting, setSuggesting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [temperature, setTemperature] = useState(0.3);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -75,7 +79,7 @@ export default function UploadFile() {
         mediaType: file.type as "image/png" | "image/jpeg" | "image/webp",
         prompt,
         maxTokens: 200,
-        temperature: 0,
+        temperature,
       });
 
       let parsed: { tags?: string[]; description?: string } | null = null;
@@ -161,6 +165,7 @@ export default function UploadFile() {
         const imageId = presignedResult.key;
         const createResult = await createImage({
           imageId,
+          title,
           tags,
           description,
         });
@@ -173,6 +178,7 @@ export default function UploadFile() {
           setIsError(false);
           setFile(null);
           setTagsInput("");
+          setTitle("");
           setDescription("");
           const input = document.getElementById("file") as HTMLInputElement;
           if (input) input.value = "";
@@ -223,26 +229,63 @@ export default function UploadFile() {
 
             {previewUrl && (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                <Image
-                  src={previewUrl}
-                  alt="Selected file preview"
-                  width={640}
-                  height={360}
-                  className="h-64 w-full object-cover"
-                />
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(true)}
+                  className="w-full cursor-pointer"
+                >
+                  <Image
+                    src={previewUrl}
+                    alt="Selected file preview"
+                    width={640}
+                    height={360}
+                    className="h-64 w-full object-cover hover:opacity-90 transition"
+                  />
+                </button>
               </div>
             )}
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm text-slate-700">Need tags? Let Claude suggest them.</div>
-              <button
-                type="button"
-                onClick={handleSuggest}
-                disabled={suggesting || !file}
-                className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {suggesting ? "Getting suggestions..." : "Suggest tags & description"}
-              </button>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="text-sm text-slate-700">Need tags? Let Claude suggest them.</div>
+                <button
+                  type="button"
+                  onClick={handleSuggest}
+                  disabled={suggesting || !file}
+                  className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {suggesting ? "Getting suggestions..." : "Suggest tags & description"}
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <label htmlFor="temperature" className="text-sm font-medium text-slate-700">
+                  Temperature: {temperature.toFixed(2)}
+                </label>
+                <input
+                  id="temperature"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={temperature}
+                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-800" htmlFor="title">
+                Title
+              </label>
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                placeholder="Optional title"
+              />
             </div>
 
             <div className="space-y-2">
@@ -309,6 +352,17 @@ export default function UploadFile() {
           </form>
         </div>
       </div>
+
+      <Modal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={title || "Preview"}
+        description="Full-size preview of your upload"
+      >
+        {previewUrl && (
+          <img src={previewUrl} alt="Preview" className="max-h-[70vh] w-full object-contain" />
+        )}
+      </Modal>
     </div>
   );
 }
