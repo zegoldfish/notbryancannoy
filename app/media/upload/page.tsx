@@ -48,13 +48,82 @@ export default function UploadFile() {
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (file && file.type.startsWith("image/")) {
-      setPreviewUrl(URL.createObjectURL(file));
-      setFile(file);
-    } else {
+
+    if (!file) {
       setPreviewUrl(null);
-      setFile(file || null);
+      setFile(null);
+      return;
     }
+
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setPreviewUrl(null);
+      setFile(null);
+      setMessage("Only JPEG, PNG, or WEBP images are allowed.");
+      setIsError(true);
+      event.target.value = "";
+      return;
+    }
+
+    setMessage(undefined);
+    setIsError(false);
+    setPreviewUrl(URL.createObjectURL(file));
+    setFile(file);
+  }
+
+  // Resize/compress the image on the client and return base64 (without data URL prefix)
+  async function getResizedBase64(
+    file: File,
+    options?: { maxDim?: number; quality?: number; format?: "image/jpeg" | "image/webp" | "image/png" }
+  ) {
+    const maxDim = options?.maxDim ?? 800; // max width/height
+    const quality = options?.quality ?? 0.8; // 0..1
+    const prefersWebp = file.type === "image/webp";
+    const prefersPng = file.type === "image/png";
+    const format: "image/jpeg" | "image/webp" | "image/png" =
+      options?.format ?? (prefersWebp ? "image/webp" : prefersPng ? "image/png" : "image/jpeg");
+
+    const bitmap = await createImageBitmap(file);
+    const { width, height } = bitmap;
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    const targetW = Math.round(width * scale);
+    const targetH = Math.round(height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2D context unavailable");
+    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+
+    // Convert to data URL
+    const dataUrl = canvas.toDataURL(format, quality);
+    // Strip prefix: data:<mime>;base64,
+    const base64 = dataUrl.split(",")[1] || "";
+    return { base64, mediaType: format };
+  }
+
+  async function getResizedBase64Adaptive(file: File) {
+    const attempts = [
+      { maxDim: 800, quality: 0.8 },
+      { maxDim: 640, quality: 0.65 },
+      { maxDim: 512, quality: 0.55 },
+    ];
+
+    for (const attempt of attempts) {
+      const { base64, mediaType } = await getResizedBase64(file, {
+        maxDim: attempt.maxDim,
+        quality: attempt.quality,
+        format: "image/jpeg", // force jpeg for smaller payloads
+      });
+
+      // base64 length ~= 4/3 of bytes; keep well under 1MB body
+      if (base64.length <= 900_000) {
+        return { base64, mediaType };
+      }
+    }
+
+    throw new Error("Image is too large even after compression; please choose a smaller image.");
   }
 
   async function handleSuggest() {
@@ -69,14 +138,14 @@ export default function UploadFile() {
     setIsError(false);
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      // Resize/compress to keep payload under ~1 MB (adaptive)
+      const { base64, mediaType } = await getResizedBase64Adaptive(file);
 
       const prompt =
         "Return ONLY strict JSON in this shape: {\n  \"title\": string,\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings. Title should be short and descriptive.";
       const response = await analyzeImageWithPrompt({
         imageBase64: base64,
-        mediaType: file.type as "image/png" | "image/jpeg" | "image/webp",
+        mediaType: mediaType as "image/jpeg",
         prompt,
         maxTokens: 200,
         temperature,
@@ -224,6 +293,7 @@ export default function UploadFile() {
               <input
                 id="file"
                 type="file"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleFileChange}
                 className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 shadow-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
               />
