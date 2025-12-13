@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
-import Link from "next/link";
 import { authOptions } from "@/auth";
+import { SignInButton } from "@app/components/SignInButton";
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
@@ -35,12 +35,7 @@ export default async function HomePage() {
               <p className="text-sm text-slate-700">
                 Sign in to access your account and start using the platform.
               </p>
-              <Link
-                href="/signin"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-              >
-                Sign in
-              </Link>
+              <SignInButton size="lg" />
             </div>
           )}
         </div>

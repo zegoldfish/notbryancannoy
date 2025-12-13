@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useUser } from "@context/UserContext";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { SignInButton } from "@app/components/SignInButton";
 
 type NavItem = {
   href: string;
@@ -54,12 +55,7 @@ export default function Nav() {
               <div className="text-xs text-slate-500">Loading...</div>
             )}
             {status === "unauthenticated" && (
-              <Link
-                href="/signin"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-              >
-                Sign in
-              </Link>
+              <SignInButton size="sm" />
             )}
             {status === "authenticated" && (
               <>
@@ -86,12 +82,7 @@ export default function Nav() {
             </button>
           )}
           {status === "unauthenticated" && (
-            <Link
-              href="/signin"
-              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-            >
-              Sign in
-            </Link>
+            <SignInButton size="sm" />
           )}
           {status === "authenticated" && (
             <button
