@@ -17,6 +17,7 @@ export type AnthropicResponse = {
 // Image types
 export type ImageItem = {
 	imageId: string;
+	userId?: string;
 	title?: string;
 	tags?: string[];
 	description?: string;
@@ -25,6 +26,7 @@ export type ImageItem = {
 
 export type ImageCreatePayload = {
 	imageId: string;
+	userId?: string;
 	title?: string;
 	tags?: string[];
 	description?: string;

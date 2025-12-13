@@ -21,6 +21,7 @@ const ImageSchema = z.object({
 	title: z.string().default(""),
 	tags: z.array(z.string()).default([]),
 	description: z.string().default(""),
+	userId: z.string().min(1, "userId is required"),
 });
 
 const UpdateImageSchema = z.object({
@@ -68,23 +69,18 @@ async function presignImage(key: string, expiresIn = 900) {
 
 async function requireSession() {
 	const session = await getServerSession(authOptions);
-	if (!session) {
+	const userId = session?.user?.email || session?.user?.name || "";
+	if (!session || !userId) {
 		throw new Error("Unauthorized: sign in required");
 	}
-}
-
-async function requireAdmin() {
-	const session = await getServerSession(authOptions);
-	if (!session?.user?.isAdmin) {
-		throw new Error("Unauthorized: admin access required");
-	}
+	return { session, userId };
 }
 
 export async function createImage(item: ImageCreatePayload) {
-	await requireSession();
+	const { userId } = await requireSession();
 	assertTable();
 
-	const parsed = ImageSchema.safeParse(item);
+	const parsed = ImageSchema.safeParse({ ...item, userId });
 	if (!parsed.success) {
 		return { error: parsed.error.issues?.[0]?.message || "Invalid image payload" };
 	}
@@ -207,11 +203,29 @@ export async function updateImage(imageId: string, updates: ImageUpdatePayload) 
 }
 
 export async function deleteImage(imageId: string) {
-	await requireAdmin();
+	const { session, userId } = await requireSession();
 	assertTable();
 	assertBucket();
 
 	if (!imageId) return { error: "imageId is required" };
+
+	try {
+		const lookup = await dynamo.send(
+			new GetCommand({
+				TableName: IMAGES_TABLE,
+				Key: { imageId },
+			})
+		);
+		const item = lookup.Item as ImageItem | undefined;
+		if (!item) return { error: "Not found" };
+		const isAdmin = !!session.user?.isAdmin;
+		if (!isAdmin && item.userId !== userId) {
+			return { error: "Unauthorized: you can only delete your own images" };
+		}
+	} catch (error) {
+		console.error("deleteImage lookup error", error);
+		return { error: "Failed to verify image ownership" };
+	}
 
 	try {
 		await s3.send(
@@ -226,13 +240,16 @@ export async function deleteImage(imageId: string) {
 	}
 
 	try {
-		await dynamo.send(
-			new DeleteCommand({
-				TableName: IMAGES_TABLE,
-				Key: { imageId },
-				ConditionExpression: "attribute_exists(imageId)",
-			})
-		);
+		const isAdmin = !!session.user?.isAdmin;
+		const condition = isAdmin ? "attribute_exists(imageId)" : "attribute_exists(imageId) AND userId = :owner";
+		const params = {
+			TableName: IMAGES_TABLE,
+			Key: { imageId },
+			ConditionExpression: condition,
+			...(isAdmin ? {} : { ExpressionAttributeValues: { ":owner": userId } }),
+		};
+
+		await dynamo.send(new DeleteCommand(params));
 		return { success: true };
 	} catch (error) {
 		console.error("deleteImage dynamo error", error);

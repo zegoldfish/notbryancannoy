@@ -8,6 +8,7 @@ import ConfirmationModal from "@app/components/ConfirmationModal";
 
 type ImageItem = {
   imageId: string;
+  userId?: string;
   title?: string;
   description?: string;
   tags?: string[];
@@ -17,10 +18,10 @@ type ImageItem = {
 
 type Props = {
   item: ImageItem;
-  isAdmin?: boolean;
+  canDelete?: boolean;
 };
 
-export default function ImageCard({ item, isAdmin = false }: Props) {
+export default function ImageCard({ item, canDelete = false }: Props) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -59,7 +60,7 @@ export default function ImageCard({ item, isAdmin = false }: Props) {
         ) : (
           <div className="text-base font-semibold text-slate-900">&nbsp;</div>
         )}
-        {isAdmin && (
+        {canDelete && (
           <button
             type="button"
             onClick={() => setShowConfirmDelete(true)}

@@ -14,6 +14,8 @@ export default async function MediaPage() {
         );
     }
 
+    const sessionUserId = session.user?.email || session.user?.name || "";
+
     const result = await listImages();
 
     if ("error" in result) {
@@ -46,7 +48,11 @@ export default async function MediaPage() {
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {items.map((item: ImageItem) => (
-                            <ImageCard key={item.imageId} item={item} isAdmin={Boolean(session.user?.isAdmin)} />
+                            <ImageCard
+                                key={item.imageId}
+                                item={item}
+                                canDelete={Boolean(session.user?.isAdmin || (sessionUserId && item.userId === sessionUserId))}
+                            />
                         ))}
                     </div>
                 )}
