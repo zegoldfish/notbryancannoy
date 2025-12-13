@@ -73,7 +73,7 @@ export default function UploadFile() {
       const base64 = Buffer.from(arrayBuffer).toString("base64");
 
       const prompt =
-        "Return ONLY strict JSON in this shape: {\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings.";
+        "Return ONLY strict JSON in this shape: {\n  \"title\": string,\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings. Title should be short and descriptive.";
       const response = await analyzeImageWithPrompt({
         imageBase64: base64,
         mediaType: file.type as "image/png" | "image/jpeg" | "image/webp",
@@ -82,7 +82,7 @@ export default function UploadFile() {
         temperature,
       });
 
-      let parsed: { tags?: string[]; description?: string } | null = null;
+      let parsed: { title?: string; tags?: string[]; description?: string } | null = null;
       try {
         parsed = JSON.parse(response.text || "{}");
       } catch (err) {
@@ -95,6 +95,9 @@ export default function UploadFile() {
         }
       }
 
+      if (parsed?.title) {
+        setTitle(parsed.title);
+      }
       if (parsed?.tags?.length) {
         setTagsInput(normalizeTags(parsed.tags.join(", ")).join(", "));
       }
@@ -102,7 +105,7 @@ export default function UploadFile() {
         setDescription(parsed.description);
       }
 
-      if (!parsed?.tags && !parsed?.description) {
+      if (!parsed?.title && !parsed?.tags && !parsed?.description) {
         setMessage("Claude responded but could not parse suggestions.");
         setIsError(true);
       } else {
