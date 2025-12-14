@@ -131,16 +131,19 @@ export async function getImage(imageId: string) {
 	}
 }
 
-export async function listImages(limit = 50) {
+export async function listImages(pageSize = 10, startKey?: { imageId: string}) {
 	await requireSession();
 	assertTable();
 	assertBucket();
+
+	const scanCommandInput = {
+		TableName: IMAGES_TABLE,
+		Limit: pageSize,
+		...(startKey ? { ExclusiveStartKey: startKey } : {}),
+	}
 	try {
 		const result = await dynamo.send(
-			new ScanCommand({
-				TableName: IMAGES_TABLE,
-				Limit: limit,
-			})
+			new ScanCommand(scanCommandInput)
 		);
 
 		const items = (result.Items || []) as ImageItem[];
