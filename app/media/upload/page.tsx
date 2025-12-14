@@ -32,6 +32,8 @@ export default function UploadFile() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [temperature, setTemperature] = useState(0.3);
   const [context, setContext] = useState("");
+  const [inputMode, setInputMode] = useState<"file" | "url">("file");
+  const [urlInput, setUrlInput] = useState("");
 
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (status === "unauthenticated" || !session) {
@@ -47,7 +49,7 @@ export default function UploadFile() {
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (previewUrl && previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
 
     if (!file) {
       setPreviewUrl(null);
@@ -69,6 +71,65 @@ export default function UploadFile() {
     setIsError(false);
     setPreviewUrl(URL.createObjectURL(file));
     setFile(file);
+    setUrlInput("");
+  }
+
+  async function handleUrlInput(value: string) {
+    setUrlInput(value);
+    
+    if (!value.trim()) {
+      setFile(null);
+      setPreviewUrl(null);
+      return;
+    }
+
+    try {
+      // Validate URL format
+      new URL(value);
+      
+      setMessage(undefined);
+      setIsError(false);
+      
+      // Fetch the image to validate it's accessible
+      const response = await fetch(value, { method: "HEAD" });
+      if (!response.ok) {
+        setMessage("Could not access the image URL");
+        setIsError(true);
+        setFile(null);
+        setPreviewUrl(null);
+        return;
+      }
+
+      const contentType = response.headers.get("content-type");
+      const allowed = ["image/jpeg", "image/png", "image/webp"];
+      if (!contentType || !allowed.some(type => contentType.includes(type))) {
+        setMessage("URL must point to a JPEG, PNG, or WEBP image");
+        setIsError(true);
+        setFile(null);
+        setPreviewUrl(null);
+        return;
+      }
+
+      // Set the URL as the preview
+      setPreviewUrl(value);
+      
+      // Create a File object from the URL for upload
+      const imageResponse = await fetch(value);
+      const blob = await imageResponse.blob();
+      const urlParts = value.split("/");
+      const filename = urlParts[urlParts.length - 1].split("?")[0] || "image.jpg";
+      const urlFile = new File([blob], filename, { type: blob.type });
+      setFile(urlFile);
+    } catch (error) {
+      if (error instanceof TypeError) {
+        setMessage("Please enter a valid URL");
+      } else {
+        setMessage("Failed to load image from URL");
+      }
+      setIsError(true);
+      setFile(null);
+      setPreviewUrl(null);
+    }
   }
 
   async function handleSuggest() {
@@ -207,20 +268,83 @@ export default function UploadFile() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-800" htmlFor="file">
-                File
-              </label>
-              <input
-                id="file"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileChange}
-                className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 shadow-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-              />
-              {file && <p className="text-xs text-slate-500">Selected: {file.name}</p>}
+              <label className="text-sm font-medium text-slate-800">Image Source</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInputMode("file");
+                    setUrlInput("");
+                    setFile(null);
+                    if (previewUrl && !previewUrl.startsWith("blob:")) {
+                      setPreviewUrl(null);
+                    }
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition ${
+                    inputMode === "file"
+                      ? "bg-blue-50 border-blue-300 text-blue-700"
+                      : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInputMode("url");
+                    setFile(null);
+                    const fileInput = document.getElementById("file") as HTMLInputElement;
+                    if (fileInput) fileInput.value = "";
+                    if (previewUrl && previewUrl.startsWith("blob:")) {
+                      URL.revokeObjectURL(previewUrl);
+                      setPreviewUrl(null);
+                    }
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg border transition ${
+                    inputMode === "url"
+                      ? "bg-blue-50 border-blue-300 text-blue-700"
+                      : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  Paste URL
+                </button>
+              </div>
             </div>
 
-            {isSafeBlobUrl(previewUrl) && (
+            {inputMode === "file" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-800" htmlFor="file">
+                  File
+                </label>
+                <input
+                  id="file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 shadow-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+                {file && <p className="text-xs text-slate-500">Selected: {file.name}</p>}
+              </div>
+            )}
+
+            {inputMode === "url" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-800" htmlFor="url">
+                  Image URL
+                </label>
+                <input
+                  id="url"
+                  type="text"
+                  placeholder="https://example.com/image.jpg"
+                  value={urlInput}
+                  onChange={(e) => handleUrlInput(e.target.value)}
+                  className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+                {file && urlInput && <p className="text-xs text-slate-500">URL loaded</p>}
+              </div>
+            )}
+
+            {previewUrl && (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                 <button
                   type="button"
@@ -233,6 +357,7 @@ export default function UploadFile() {
                     width={640}
                     height={360}
                     className="h-64 w-full object-cover hover:opacity-90 transition"
+                    unoptimized={!previewUrl.startsWith("blob:")}
                   />
                 </button>
               </div>
@@ -274,7 +399,7 @@ export default function UploadFile() {
         title={title || "Preview"}
         description=""
       >
-        {isSafeBlobUrl(previewUrl) && (
+        {previewUrl && (
           <div className="relative w-full" style={{ minHeight: "50vh", maxHeight: "70vh" }}>
             <Image
               src={previewUrl}
@@ -282,7 +407,7 @@ export default function UploadFile() {
               fill
               className="object-contain"
               sizes="100vw"
-              unoptimized
+              unoptimized={!previewUrl.startsWith("blob:")}
             />
           </div>
         )}
