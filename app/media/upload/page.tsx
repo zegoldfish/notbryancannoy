@@ -46,14 +46,17 @@ export default function UploadFile() {
         const pastedFile = item.getAsFile();
         if (!pastedFile) return;
 
+        if (isSafeBlobUrl(previewUrl)) {
+          URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(null);
+        }
+
         const allowed = ["image/jpeg", "image/png", "image/webp"];
         if (!allowed.includes(pastedFile.type)) {
           setMessage("Only JPEG, PNG, or WEBP images are allowed.");
           setIsError(true);
           return;
         }
-
-        if (isSafeBlobUrl(previewUrl)) URL.revokeObjectURL(previewUrl);
 
         setMessage(undefined);
         setIsError(false);
