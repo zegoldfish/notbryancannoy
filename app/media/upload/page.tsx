@@ -106,7 +106,11 @@ export default function UploadFile() {
       const items = await navigator.clipboard.read();
       for (const item of items) {
         if (item.types.some(type => type.startsWith("image/"))) {
-          const imageBlob = await item.getType(item.types.find(t => t.startsWith("image/"))!);
+          const imageType = item.types.find(t => t.startsWith("image/"));
+          if (!imageType) {
+            continue;
+          }
+          const imageBlob = await item.getType(imageType);
           // Determine file extension based on MIME type
           const mimeToExt: { [key: string]: string } = {
             "image/png": "png",
