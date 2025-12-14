@@ -61,6 +61,7 @@ export default function UploadFile() {
   const [context, setContext] = useState("");
   const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [urlInput, setUrlInput] = useState("");
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (status === "unauthenticated" || !session) {
@@ -90,7 +91,7 @@ export default function UploadFile() {
       setFile(null);
       setMessage("Only JPEG, PNG, or WEBP images are allowed.");
       setIsError(true);
-      event.target.value = "";
+      setFileInputKey((key) => key + 1);
       return;
     }
 
@@ -270,12 +271,13 @@ export default function UploadFile() {
           setTagsInput("");
           setTitle("");
           setDescription("");
-          if (previewUrl) {
+          setUrlInput("");
+          setInputMode("file");
+          if (previewUrl && isSafeBlobUrl(previewUrl)) {
             URL.revokeObjectURL(previewUrl);
-            setPreviewUrl(null);
           }
-          const input = document.getElementById("file") as HTMLInputElement;
-          if (input) input.value = "";
+          setPreviewUrl(null);
+          setFileInputKey((key) => key + 1);
         }
       }
     } catch (error) {
@@ -310,6 +312,7 @@ export default function UploadFile() {
                     setInputMode("file");
                     setUrlInput("");
                     setFile(null);
+                    setFileInputKey((key) => key + 1);
                     if (previewUrl && !previewUrl.startsWith("blob:")) {
                       setPreviewUrl(null);
                     }
@@ -327,8 +330,7 @@ export default function UploadFile() {
                   onClick={() => {
                     setInputMode("url");
                     setFile(null);
-                    const fileInput = document.getElementById("file") as HTMLInputElement;
-                    if (fileInput) fileInput.value = "";
+                    setFileInputKey((key) => key + 1);
                     if (previewUrl && previewUrl.startsWith("blob:")) {
                       URL.revokeObjectURL(previewUrl);
                       setPreviewUrl(null);
@@ -351,6 +353,7 @@ export default function UploadFile() {
                   File
                 </label>
                 <input
+                  key={fileInputKey}
                   id="file"
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
