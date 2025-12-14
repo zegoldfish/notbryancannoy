@@ -27,7 +27,7 @@ export function useInfiniteImages({
     queryKey: ["images-infinite", { pageSize }],
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
-      if (pageSize) params.set("pageSize", String(pageSize));
+      params.set("pageSize", String(pageSize));
       if (pageParam?.imageId) params.set("startKey", String(pageParam.imageId));
 
       const res = await fetch(`/api/images?${params.toString()}`, {
