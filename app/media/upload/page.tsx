@@ -18,6 +18,33 @@ function isSafeBlobUrl(url: string | null): url is string {
 	return typeof url === "string" && url.startsWith("blob:");
 }
 
+function validateRemoteImageUrl(rawUrl: string): { ok: boolean; reason?: string } {
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== "https:") {
+      return { ok: false, reason: "URL must start with https://" };
+    }
+
+    const hostname = url.hostname.toLowerCase();
+    const blockedHosts = ["localhost", "127.0.0.1", "::1"];
+    if (blockedHosts.includes(hostname)) {
+      return { ok: false, reason: "Local addresses are not allowed" };
+    }
+
+    if (/^(10\.|127\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/.test(hostname)) {
+      return { ok: false, reason: "Private network addresses are not allowed" };
+    }
+
+    if (/\.(local|internal|lan)$/i.test(hostname)) {
+      return { ok: false, reason: "Private/internal hosts are not allowed" };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: "Please enter a valid URL" };
+  }
+}
+
 export default function UploadFile() {
   const { session, status } = useUser();
   const [file, setFile] = useState<File | null>(null);
@@ -84,8 +111,15 @@ export default function UploadFile() {
     }
 
     try {
-      // Validate URL format
-      new URL(value);
+      // Validate URL format and block private/internal addresses to avoid SSRF-style fetches
+      const urlCheck = validateRemoteImageUrl(value);
+      if (!urlCheck.ok) {
+        setMessage(urlCheck.reason);
+        setIsError(true);
+        setFile(null);
+        setPreviewUrl(null);
+        return;
+      }
       
       setMessage(undefined);
       setIsError(false);
