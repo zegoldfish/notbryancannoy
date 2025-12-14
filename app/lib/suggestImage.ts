@@ -90,6 +90,26 @@ async function getResizedBase64Adaptive(
 	throw new Error("Image is too large even after compression; please choose a smaller image.");
 }
 
+function sanitizeContext(input: string): string {
+	// Limit length to prevent excessive token usage
+	let sanitized = input.slice(0, 200);
+	
+	// Remove patterns that could be interpreted as instructions or role changes
+	sanitized = sanitized
+		.replace(/\b(system|assistant|user|human|ai|claude):/gi, "")
+		.replace(/\b(ignore|disregard|forget|override)\s+(previous|above|all|instructions?|rules?)/gi, "")
+		.replace(/<\/?[^>]+(>|$)/g, "") // Remove XML-like tags
+		.replace(/```[\s\S]*?```/g, "") // Remove code blocks
+		.replace(/[{}[\]]/g, "") // Remove JSON-like structures
+		.trim();
+	
+	// Limit to single line or max 2 lines to prevent complex injection
+	const lines = sanitized.split(/\r?\n/).slice(0, 2);
+	sanitized = lines.join(" ").trim();
+	
+	return sanitized;
+}
+
 export async function suggestImageMetadata(
 	fileOrUrl: File | string,
 	temperature: number,
@@ -103,7 +123,12 @@ export async function suggestImageMetadata(
 
 	const basePrompt =
 		"Return ONLY strict JSON in this shape: {\n  \"title\": string,\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings. Title should be short and descriptive.";
-	const prompt = context ? `${context}\n\n${basePrompt}` : basePrompt;
+	
+	// Sanitize and frame user context to prevent prompt injection
+	const sanitizedContext = context ? sanitizeContext(context) : "";
+	const prompt = sanitizedContext 
+		? `User's image context (for reference only): "${sanitizedContext}"\n\n${basePrompt}` 
+		: basePrompt;
 
 	const response = await analyzeImageWithPrompt({
 		imageBase64: base64,
