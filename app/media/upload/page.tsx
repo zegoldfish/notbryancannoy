@@ -107,7 +107,14 @@ export default function UploadFile() {
       for (const item of items) {
         if (item.types.some(type => type.startsWith("image/"))) {
           const imageBlob = await item.getType(item.types.find(t => t.startsWith("image/"))!);
-          const pastedFile = new File([imageBlob], "clipboard-image.png", { type: imageBlob.type });
+          // Determine file extension based on MIME type
+          const mimeToExt: { [key: string]: string } = {
+            "image/png": "png",
+            "image/jpeg": "jpg",
+            "image/webp": "webp"
+          };
+          const ext = mimeToExt[imageBlob.type] || "png";
+          const pastedFile = new File([imageBlob], `clipboard-image.${ext}`, { type: imageBlob.type });
           processClipboardFile(pastedFile);
           return;
         }
