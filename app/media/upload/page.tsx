@@ -425,7 +425,7 @@ export default function UploadFile() {
                   className="px-3 py-2 text-sm font-medium rounded-lg border bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 transition"
                   title="Paste image from clipboard (works on mobile)"
                 >
-                  📋 Paste
+                  <span aria-hidden="true" role="img">📋</span> Paste
                 </button>
               </div>
             </div>
