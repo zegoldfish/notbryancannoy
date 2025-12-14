@@ -53,7 +53,7 @@ export default function UploadFile() {
           return;
         }
 
-        if (previewUrl && previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+        if (isSafeBlobUrl(previewUrl)) URL.revokeObjectURL(previewUrl);
 
         setMessage(undefined);
         setIsError(false);
