@@ -64,6 +64,27 @@ export default function UploadFile() {
   const [fileInputKey, setFileInputKey] = useState(0);
   const urlRequestIdRef = useRef(0);
 
+  function processClipboardFile(pastedFile: File) {
+    if (isSafeBlobUrl(previewUrl)) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(pastedFile.type)) {
+      setMessage("Only JPEG, PNG, or WEBP images are allowed.");
+      setIsError(true);
+      return;
+    }
+
+    setMessage(undefined);
+    setIsError(false);
+    setPreviewUrl(URL.createObjectURL(pastedFile));
+    setFile(pastedFile);
+    setUrlInput("");
+    setInputMode("file");
+  }
+
   async function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
     const items = event.clipboardData?.items;
     if (!items) return;
@@ -74,27 +95,43 @@ export default function UploadFile() {
         event.preventDefault();
         const pastedFile = item.getAsFile();
         if (!pastedFile) return;
-
-        if (isSafeBlobUrl(previewUrl)) {
-          URL.revokeObjectURL(previewUrl);
-          setPreviewUrl(null);
-        }
-
-        const allowed = ["image/jpeg", "image/png", "image/webp"];
-        if (!allowed.includes(pastedFile.type)) {
-          setMessage("Only JPEG, PNG, or WEBP images are allowed.");
-          setIsError(true);
-          return;
-        }
-
-        setMessage(undefined);
-        setIsError(false);
-        setPreviewUrl(URL.createObjectURL(pastedFile));
-        setFile(pastedFile);
-        setUrlInput("");
-        setInputMode("file");
+        processClipboardFile(pastedFile);
         break;
       }
+    }
+  }
+
+  async function handlePasteFromClipboard() {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        if (item.types.some(type => type.startsWith("image/"))) {
+          const imageType = item.types.find(t => t.startsWith("image/"));
+          if (!imageType) {
+            continue;
+          }
+          const imageBlob = await item.getType(imageType);
+          // Determine file extension based on MIME type
+          const mimeToExt: { [key: string]: string } = {
+            "image/png": "png",
+            "image/jpeg": "jpg",
+            "image/webp": "webp"
+          };
+          const ext = mimeToExt[imageBlob.type] || "png";
+          const pastedFile = new File([imageBlob], `clipboard-image.${ext}`, { type: imageBlob.type });
+          processClipboardFile(pastedFile);
+          return;
+        }
+      }
+      setMessage("No image found in clipboard");
+      setIsError(true);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        setMessage("Clipboard access denied. Please allow clipboard permissions.");
+      } else {
+        setMessage("Failed to read clipboard");
+      }
+      setIsError(true);
     }
   }
 
@@ -382,9 +419,14 @@ export default function UploadFile() {
                 >
                   Paste URL
                 </button>
-                <div className="text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 flex items-center whitespace-nowrap">
-                  or Paste Image
-                </div>
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  className="px-3 py-2 text-sm font-medium rounded-lg border bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 transition"
+                  title="Paste image from clipboard (works on mobile)"
+                >
+                  <span aria-hidden="true" role="img">📋</span> Paste
+                </button>
               </div>
             </div>
 
