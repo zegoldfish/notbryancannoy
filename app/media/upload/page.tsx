@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useUser } from "@context/UserContext";
 import { getPresignedPost } from "./actions";
 import { createImage } from "@app/images/actions";
@@ -62,6 +62,7 @@ export default function UploadFile() {
   const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [urlInput, setUrlInput] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
+  const urlRequestIdRef = useRef(0);
 
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (status === "unauthenticated" || !session) {
@@ -103,6 +104,7 @@ export default function UploadFile() {
   }
 
   async function handleUrlInput(value: string) {
+    const requestId = ++urlRequestIdRef.current;
     setUrlInput(value);
     
     if (!value.trim()) {
@@ -127,6 +129,7 @@ export default function UploadFile() {
       
       // Fetch the image to validate it's accessible
       const response = await fetch(value, { method: "HEAD" });
+      if (requestId !== urlRequestIdRef.current) return; // stale
       if (!response.ok) {
         setMessage("Could not access the image URL");
         setIsError(true);
@@ -150,6 +153,7 @@ export default function UploadFile() {
       
       // Create a File object from the URL for upload
       const imageResponse = await fetch(value);
+      if (requestId !== urlRequestIdRef.current) return; // stale
       const blob = await imageResponse.blob();
       const urlParts = value.split("/");
       const filename = urlParts[urlParts.length - 1].split("?")[0] || "image.jpg";
