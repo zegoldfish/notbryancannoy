@@ -1,5 +1,42 @@
 import { analyzeImageWithPrompt } from "@app/claude/actions";
 
+/**
+ * Validates and sanitizes the context parameter to prevent prompt injection attacks
+ * @param context - The user-provided context string
+ * @returns Sanitized context string or undefined if invalid
+ */
+function sanitizeContext(context?: string): string | undefined {
+	if (!context || typeof context !== "string") {
+		return undefined;
+	}
+
+	// Trim whitespace
+	let sanitized = context.trim();
+
+	// Check maximum length (limit to 500 characters to prevent token abuse)
+	const MAX_LENGTH = 500;
+	if (sanitized.length > MAX_LENGTH) {
+		sanitized = sanitized.substring(0, MAX_LENGTH);
+	}
+
+	// Remove or escape characters commonly used in prompt injection
+	// This includes newlines, system-level commands, and special tokens
+	sanitized = sanitized
+		// Replace multiple newlines with a single space
+		.replace(/\n+/g, " ")
+		// Replace multiple spaces with a single space
+		.replace(/\s+/g, " ")
+		// Remove potential prompt injection markers and commands
+		.replace(/[<>{}[\]]/g, "")
+		// Remove control characters
+		.replace(/[\x00-\x1F\x7F]/g, "")
+		// Trim again after replacements
+		.trim();
+
+	// Return undefined if the sanitized string is empty
+	return sanitized.length > 0 ? sanitized : undefined;
+}
+
 async function getResizedBase64(
 	file: File,
 	options?: { maxDim?: number; quality?: number; format?: "image/jpeg" | "image/webp" | "image/png" }
@@ -101,9 +138,12 @@ export async function suggestImageMetadata(
 }> {
 	const { base64, mediaType } = await getResizedBase64Adaptive(fileOrUrl);
 
+	// Sanitize the context to prevent prompt injection
+	const sanitizedContext = sanitizeContext(context);
+
 	const basePrompt =
 		"Return ONLY strict JSON in this shape: {\n  \"title\": string,\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings. Title should be short and descriptive.";
-	const prompt = context ? `${context}\n\n${basePrompt}` : basePrompt;
+	const prompt = sanitizedContext ? `${sanitizedContext}\n\n${basePrompt}` : basePrompt;
 
 	const response = await analyzeImageWithPrompt({
 		imageBase64: base64,
