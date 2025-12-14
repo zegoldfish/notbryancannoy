@@ -1,41 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import ImageCard from "@app/components/ImageCard";
 import { Unauthorized } from "@app/components/Unauthorized";
 import type { ImageItem } from "@/app/types";
 import { useUser } from "@context/UserContext";
+import { useImages } from "@app/hooks/useImages";
 
 export default function MediaPage() {
     const { session, status } = useUser();
-    const [items, setItems] = useState<ImageItem[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-
-    useEffect(() => {
-        if (status !== "authenticated") return;
-        let cancelled = false;
-        async function load() {
-            setLoading(true);
-            setError(null);
-            try {
-                const res = await fetch("/api/images", { cache: "no-store" });
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
-                    throw new Error(data?.error || `Failed to load images (${res.status})`);
-                }
-                const data = await res.json();
-                if (!cancelled) setItems(Array.isArray(data.items) ? data.items : []);
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : "Failed to load images";
-                if (!cancelled) setError(message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-        load();
-        return () => { cancelled = true; };
-    }, [status]);
+    const { data, isLoading: loading, error } = useImages({ enabled: status === "authenticated" });
 
     if (status === "loading") {
         return (
@@ -51,6 +24,7 @@ export default function MediaPage() {
 
     const sessionUserId = session.user?.email || session.user?.name || "";
     const isAdmin = Boolean(session.user?.isAdmin);
+    const items = (data?.items || []) as ImageItem[];
 
     return (
         <div className="min-h-screen bg-slate-50 py-16 px-4">
@@ -63,7 +37,7 @@ export default function MediaPage() {
                 {error ? (
                     <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800 shadow-sm">
                         <h1 className="text-xl font-semibold">Failed to load images</h1>
-                        <p className="mt-2 text-sm">{error}</p>
+                        <p className="mt-2 text-sm">{error instanceof Error ? error.message : String(error)}</p>
                     </div>
                 ) : loading ? (
                     <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600 shadow-sm">
