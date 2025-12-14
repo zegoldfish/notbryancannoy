@@ -35,6 +35,37 @@ export default function UploadFile() {
   const [inputMode, setInputMode] = useState<"file" | "url">("file");
   const [urlInput, setUrlInput] = useState("");
 
+  async function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        event.preventDefault();
+        const pastedFile = item.getAsFile();
+        if (!pastedFile) return;
+
+        const allowed = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowed.includes(pastedFile.type)) {
+          setMessage("Only JPEG, PNG, or WEBP images are allowed.");
+          setIsError(true);
+          return;
+        }
+
+        if (previewUrl && previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+
+        setMessage(undefined);
+        setIsError(false);
+        setPreviewUrl(URL.createObjectURL(pastedFile));
+        setFile(pastedFile);
+        setUrlInput("");
+        setInputMode("file");
+        break;
+      }
+    }
+  }
+
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (status === "unauthenticated" || !session) {
     return (
@@ -265,11 +296,11 @@ export default function UploadFile() {
           <StatusBanner message={message} isError={isError} />
         )}
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" onPaste={handlePaste}>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-800">Image Source</label>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -308,6 +339,9 @@ export default function UploadFile() {
                 >
                   Paste URL
                 </button>
+                <div className="text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 flex items-center whitespace-nowrap">
+                  or Paste Image
+                </div>
               </div>
             </div>
 
