@@ -249,5 +249,3 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 		</div>
 	);
 }
-
-
