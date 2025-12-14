@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useUser } from "@context/UserContext";
 import { getPresignedPost } from "./actions";
 import { createImage } from "@app/images/actions";
-import { suggestImageMetadata } from "@app/hooks/useSuggestImage";
+import { suggestImageMetadata } from "@/app/lib/suggestImage";
 import Image from "next/image";
 import Modal from "@app/components/Modal";
 import StatusBanner from "@app/components/StatusBanner";

@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@context/UserContext";
 import { getImage, updateImage } from "@app/images/actions";
-import { suggestImageMetadata } from "@app/hooks/useSuggestImage";
+import { suggestImageMetadata } from "@/app/lib/suggestImage";
 import Image from "next/image";
 import Modal from "@app/components/Modal";
 import StatusBanner from "@app/components/StatusBanner";
