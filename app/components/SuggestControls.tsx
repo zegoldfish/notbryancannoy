@@ -1,16 +1,22 @@
+import { useId } from "react";
+
 export default function SuggestControls({
 	onSuggest,
 	suggesting,
 	temperature,
 	setTemperature,
 	disabled = false,
+	idPrefix,
 }: {
 	onSuggest: () => void;
 	suggesting: boolean;
 	temperature: number;
 	setTemperature: (value: number) => void;
 	disabled?: boolean;
+	idPrefix?: string;
 }) {
+	const generatedId = useId();
+	const temperatureId = idPrefix ? `${idPrefix}-temperature` : `${generatedId}-temperature`;
 	return (
 		<div className="space-y-3">
 			<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -25,11 +31,11 @@ export default function SuggestControls({
 				</button>
 			</div>
 			<div className="flex items-center gap-3">
-				<label htmlFor="temperature" className="text-sm font-medium text-slate-700">
+				<label htmlFor={temperatureId} className="text-sm font-medium text-slate-700">
 					Temperature: {temperature.toFixed(2)}
 				</label>
 				<input
-					id="temperature"
+					id={temperatureId}
 					type="range"
 					min="0"
 					max="1"
