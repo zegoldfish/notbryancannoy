@@ -29,6 +29,7 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 	const [suggesting, setSuggesting] = useState(false);
 	const [previewOpen, setPreviewOpen] = useState(false);
 	const [temperature, setTemperature] = useState(0.3);
+	const [context, setContext] = useState("");
 
 	useEffect(() => {
 		if (status === "loading") return;
@@ -100,7 +101,7 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 		setIsError(false);
 
 		try {
-			const result = await suggestImageMetadata(image.url, temperature);
+			const result = await suggestImageMetadata(image.url, temperature, context || undefined);
 
 			if (result.title) {
 				setTitle(result.title);
@@ -196,6 +197,8 @@ export default function EditImagePage({ params }: { params: Promise<{ imageId: s
 							suggesting={suggesting}
 							temperature={temperature}
 							setTemperature={setTemperature}
+							context={context}
+							setContext={setContext}
 						/>
 
 						<MetadataFields

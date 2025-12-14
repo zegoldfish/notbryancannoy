@@ -31,6 +31,7 @@ export default function UploadFile() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [temperature, setTemperature] = useState(0.3);
+  const [context, setContext] = useState("");
 
   if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (status === "unauthenticated" || !session) {
@@ -82,7 +83,7 @@ export default function UploadFile() {
     setIsError(false);
 
     try {
-      const result = await suggestImageMetadata(file, temperature);
+      const result = await suggestImageMetadata(file, temperature, context || undefined);
 
       if (result.title) {
         setTitle(result.title);
@@ -243,6 +244,8 @@ export default function UploadFile() {
               disabled={!file}
               temperature={temperature}
               setTemperature={setTemperature}
+              context={context}
+              setContext={setContext}
             />
 
             <MetadataFields
