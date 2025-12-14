@@ -42,7 +42,7 @@ export default function MediaPage() {
 
         observer.observe(el);
         return () => observer.disconnect();
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, itemsList.length]);
 
     if (status === "loading") {
         return (
