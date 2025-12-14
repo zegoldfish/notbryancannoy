@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 
 function normalizeTags(raw: string): string[] {
 	return Array.from(
@@ -20,6 +20,7 @@ export default function MetadataFields({
 	setTagsInput,
 	description,
 	setDescription,
+	idPrefix,
 }: {
 	title: string;
 	setTitle: (value: string) => void;
@@ -27,17 +28,23 @@ export default function MetadataFields({
 	setTagsInput: (value: string) => void;
 	description: string;
 	setDescription: (value: string) => void;
+	idPrefix?: string;
 }) {
+// Generate unique, stable IDs to avoid collisions when multiple instances render
+	const baseId = idPrefix ?? useId();
+	const titleId = `${baseId}-title`;
+	const tagsId = `${baseId}-tags`;
+	const descriptionId = `${baseId}-description`;
 	const tags = useMemo(() => normalizeTags(tagsInput), [tagsInput]);
 
 	return (
 		<>
 			<div className="space-y-2">
-				<label className="text-sm font-medium text-slate-800" htmlFor="title">
+				<label className="text-sm font-medium text-slate-800" htmlFor={titleId}>
 					Title
 				</label>
 				<input
-					id="title"
+					id={titleId}
 					type="text"
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
@@ -47,11 +54,11 @@ export default function MetadataFields({
 			</div>
 
 			<div className="space-y-2">
-				<label className="text-sm font-medium text-slate-800" htmlFor="tags">
+				<label className="text-sm font-medium text-slate-800" htmlFor={tagsId}>
 					Tags (comma-separated)
 				</label>
 				<input
-					id="tags"
+					id={tagsId}
 					type="text"
 					value={tagsInput}
 					onChange={(e) => setTagsInput(e.target.value)}
@@ -87,11 +94,11 @@ export default function MetadataFields({
 			</div>
 
 			<div className="space-y-2">
-				<label className="text-sm font-medium text-slate-800" htmlFor="description">
+				<label className="text-sm font-medium text-slate-800" htmlFor={descriptionId}>
 					Description
 				</label>
 				<textarea
-					id="description"
+					id={descriptionId}
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
 					rows={3}
