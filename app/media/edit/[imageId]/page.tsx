@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@context/UserContext";
 import { getImage, updateImage } from "@app/images/actions";
 import { suggestImageMetadata } from "@/app/lib/suggestImage";
+import { normalizeTags } from "@/app/lib/normalizeTags";
 import Image from "next/image";
 import Modal from "@app/components/Modal";
 import StatusBanner from "@app/components/StatusBanner";
@@ -12,17 +13,6 @@ import MetadataFields from "@app/components/MetadataFields";
 import SuggestControls from "@app/components/SuggestControls";
 import { Unauthorized } from "@app/components/Unauthorized";
 import type { ImageItem } from "@/app/types";
-
-function normalizeTags(raw: string): string[] {
-	return Array.from(
-		new Set(
-			raw
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean)
-		)
-	);
-}
 
 export default function EditImagePage({ params }: { params: Promise<{ imageId: string }> }) {
 	const { imageId } = use(params);

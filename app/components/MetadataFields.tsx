@@ -1,17 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
-
-function normalizeTags(raw: string): string[] {
-	return Array.from(
-		new Set(
-			raw
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean)
-		)
-	);
-}
+import { normalizeTags } from "@/app/lib/normalizeTags";
 
 export default function MetadataFields({
 	title,
@@ -31,7 +21,8 @@ export default function MetadataFields({
 	idPrefix?: string;
 }) {
 // Generate unique, stable IDs to avoid collisions when multiple instances render
-	const baseId = idPrefix ?? useId();
+	const generatedId = useId();
+	const baseId = idPrefix ?? generatedId;
 	const titleId = `${baseId}-title`;
 	const tagsId = `${baseId}-tags`;
 	const descriptionId = `${baseId}-description`;
