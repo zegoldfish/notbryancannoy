@@ -1,5 +1,8 @@
 import { analyzeImageWithPrompt } from "@app/claude/actions";
 
+// Maximum length for context parameter to prevent token abuse
+const CONTEXT_MAX_LENGTH = 500;
+
 /**
  * Validates and sanitizes the context parameter to prevent prompt injection attacks
  * @param context - The user-provided context string
@@ -14,9 +17,8 @@ function sanitizeContext(context?: string): string | undefined {
 	let sanitized = context.trim();
 
 	// Check maximum length (limit to 500 characters to prevent token abuse)
-	const MAX_LENGTH = 500;
-	if (sanitized.length > MAX_LENGTH) {
-		sanitized = sanitized.substring(0, MAX_LENGTH);
+	if (sanitized.length > CONTEXT_MAX_LENGTH) {
+		sanitized = sanitized.substring(0, CONTEXT_MAX_LENGTH);
 	}
 
 	// Remove or escape characters commonly used in prompt injection
@@ -27,7 +29,7 @@ function sanitizeContext(context?: string): string | undefined {
 		// Replace multiple spaces with a single space
 		.replace(/\s+/g, " ")
 		// Remove potential prompt injection markers and commands
-		.replace(/[<>{}[\]]/g, "")
+		.replace(/[\]<>{}[]/g, "")
 		// Remove control characters
 		.replace(/[\x00-\x1F\x7F]/g, "")
 		// Trim again after replacements
