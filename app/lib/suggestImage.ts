@@ -92,7 +92,8 @@ async function getResizedBase64Adaptive(
 
 export async function suggestImageMetadata(
 	fileOrUrl: File | string,
-	temperature: number
+	temperature: number,
+	context?: string
 ): Promise<{
 	title?: string;
 	tags?: string[];
@@ -100,8 +101,9 @@ export async function suggestImageMetadata(
 }> {
 	const { base64, mediaType } = await getResizedBase64Adaptive(fileOrUrl);
 
-	const prompt =
+	const basePrompt =
 		"Return ONLY strict JSON in this shape: {\n  \"title\": string,\n  \"tags\": string[],\n  \"description\": string\n}\nRules: no prose, no code fences, no markdown, no trailing commas. Tags must be concise strings. Title should be short and descriptive.";
+	const prompt = context ? `${context}\n\n${basePrompt}` : basePrompt;
 
 	const response = await analyzeImageWithPrompt({
 		imageBase64: base64,
