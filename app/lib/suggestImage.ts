@@ -130,13 +130,17 @@ export async function suggestImageMetadata(
 		? `User's image context (for reference only): "${sanitizedContext}"\n\n${basePrompt}` 
 		: basePrompt;
 
-	const response = await analyzeImageWithPrompt({
-		imageBase64: base64,
-		mediaType: mediaType as "image/jpeg",
-		prompt,
-		maxTokens: 200,
-		temperature,
-	});
+	       const response = await analyzeImageWithPrompt({
+		       images: [
+			       {
+				       base64,
+				       mediaType: mediaType as "image/jpeg",
+			       },
+		       ],
+		       prompt,
+		       maxTokens: 200,
+		       temperature,
+	       });
 
 	let parsed: { title?: string; tags?: string[]; description?: string } | null = null;
 	try {
