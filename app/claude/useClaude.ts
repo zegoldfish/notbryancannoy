@@ -46,6 +46,8 @@ export function useClaude() {
 	const [loading, setLoading] = useState(false);
 	const [messages, setMessages] = useState<DisplayMessage[]>([]);
 	const [conversationHistory, setConversationHistory] = useState<APIMessage[]>([]);
+	const [maxTokens, setMaxTokens] = useState(600);
+	const [temperature, setTemperature] = useState(0.7);
 
 	       async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
 		       const fileList = event.target.files;
@@ -106,10 +108,11 @@ export function useClaude() {
 
 		       const newHistory: APIMessage[] = [...conversationHistory, { role: "user", content }];
 
+		       const clampedTokens = Math.max(50, Math.min(4000, maxTokens));
 		       const response = await chatWithClaude({
 			       messages: newHistory,
-			       maxTokens: 600,
-			       temperature: 0.7,
+			       maxTokens: clampedTokens,
+			       temperature,
 		       });
 
 		       return { responseText: response.text || "No response returned.", newHistory };
@@ -194,6 +197,10 @@ export function useClaude() {
 		       loading,
 		       messages,
 		       conversationHistory,
+		       maxTokens,
+		       setMaxTokens,
+		       temperature,
+		       setTemperature,
 		       handleFileChange,
 		       handleAskQuestion,
 		       handleClearChat,
