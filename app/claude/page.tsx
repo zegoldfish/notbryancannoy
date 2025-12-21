@@ -70,6 +70,10 @@ export default function ClaudePage() {
 		       setQuestion,
 		       loading,
 		       messages,
+		       maxTokens,
+		       setMaxTokens,
+		       temperature,
+		       setTemperature,
 		       handleFileChange,
 		       handleAskQuestion,
 		       handleClearChat,
@@ -154,7 +158,7 @@ export default function ClaudePage() {
 
 			<div className="border-t border-slate-200 bg-white px-4 py-4 shadow-sm">
 				<div className="mx-auto max-w-3xl space-y-3">
-					   <div className="flex items-center gap-3">
+					<div className="flex items-center gap-3">
 						   <label
 							   htmlFor="file"
 							   className="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
@@ -175,6 +179,40 @@ export default function ClaudePage() {
 							   </span>
 						   )}
 					   </div>
+
+					<div className="flex items-center gap-3">
+						<label htmlFor="maxTokens" className="text-sm font-medium text-slate-700">
+							Max tokens
+						</label>
+						<input
+							id="maxTokens"
+							type="number"
+							min={50}
+							max={4000}
+							step={50}
+							value={maxTokens}
+							onChange={(e) => setMaxTokens(Number(e.target.value) || 0)}
+							className="w-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+						/>
+						<p className="text-xs text-slate-500">50-4000</p>
+					</div>
+
+					<div className="flex items-center gap-3">
+						<label htmlFor="temperature" className="text-sm font-medium text-slate-700">
+							Temperature: {temperature.toFixed(2)}
+						</label>
+						<input
+							id="temperature"
+							type="range"
+							min="0"
+							max="1"
+							step="0.01"
+							value={temperature}
+							onChange={(e) => setTemperature(parseFloat(e.target.value))}
+							className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+						/>
+					</div>
+					<p className="text-xs text-slate-500">Lower = more deterministic; higher = more creative.</p>
 
 					<form onSubmit={handleAskQuestion} className="flex items-end gap-2">
 						<div className="flex-1">
