@@ -62,17 +62,18 @@ export default function ClaudePage() {
 	const { session, status } = useUser();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	const {
-		file,
-		imageBase64,
-		question,
-		setQuestion,
-		loading,
-		messages,
-		handleFileChange,
-		handleAskQuestion,
-		handleClearChat,
-	} = useClaude();
+	       const {
+		       files,
+		       imageUrls,
+		       imageBase64s,
+		       question,
+		       setQuestion,
+		       loading,
+		       messages,
+		       handleFileChange,
+		       handleAskQuestion,
+		       handleClearChat,
+	       } = useClaude();
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -153,22 +154,27 @@ export default function ClaudePage() {
 
 			<div className="border-t border-slate-200 bg-white px-4 py-4 shadow-sm">
 				<div className="mx-auto max-w-3xl space-y-3">
-					<div className="flex items-center gap-3">
-						<label
-							htmlFor="file"
-							className="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-						>
-							{file ? "Change image" : "Upload image"}
-						</label>
-						<input
-							id="file"
-							type="file"
-							accept="image/png,image/jpeg,image/webp"
-							onChange={handleFileChange}
-							className="hidden"
-						/>
-						{file && <span className="text-xs text-slate-500">{file.name}</span>}
-					</div>
+					   <div className="flex items-center gap-3">
+						   <label
+							   htmlFor="file"
+							   className="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+						   >
+							   {files.length > 0 ? "Change images" : "Upload images"}
+						   </label>
+						   <input
+							   id="file"
+							   type="file"
+							   accept="image/png,image/jpeg,image/webp"
+							   multiple
+							   onChange={handleFileChange}
+							   className="hidden"
+						   />
+						   {files.length > 0 && (
+							   <span className="text-xs text-slate-500">
+								   {files.map((f) => f.name).join(", ")}
+							   </span>
+						   )}
+					   </div>
 
 					<form onSubmit={handleAskQuestion} className="flex items-end gap-2">
 						<div className="flex-1">
@@ -182,7 +188,7 @@ export default function ClaudePage() {
 									}
 								}}
 								rows={1}
-								placeholder={imageBase64 ? "Ask a question about the image..." : "Ask Claude anything..."}
+								   placeholder={imageBase64s.length > 0 ? "Ask a question about the images..." : "Ask Claude anything..."}
 								className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
 							/>
 						</div>
