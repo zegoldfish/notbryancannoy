@@ -11,14 +11,12 @@ const bedrock = new BedrockRuntimeClient({
 });
 
 export async function analyzeImageWithPrompt({
-	imageBase64,
-	mediaType = "image/png",
+	images,
 	prompt,
 	maxTokens = 600,
 	temperature = 0.2,
 }: {
-	imageBase64: string;
-	mediaType?: "image/png" | "image/jpeg" | "image/webp";
+	images: { base64: string; mediaType: "image/png" | "image/jpeg" | "image/webp" }[];
 	prompt: string;
 	maxTokens?: number;
 	temperature?: number;
@@ -28,27 +26,29 @@ export async function analyzeImageWithPrompt({
 		throw new Error("Unauthorized: sign in required");
 	}
 
-	const body = {
-		anthropic_version: "bedrock-2023-05-31",
-		max_tokens: maxTokens,
-		temperature,
-		messages: [
-			{
-				role: "user",
-				content: [
-					{
-						type: "image",
-						source: {
-							type: "base64",
-							media_type: mediaType,
-							data: imageBase64,
-						},
-					},
-					{ type: "text", text: prompt },
-				],
-			},
-		],
-	};
+	       const imageContents = images.map(img => ({
+		       type: "image",
+		       source: {
+			       type: "base64",
+			       media_type: img.mediaType,
+			       data: img.base64,
+		       },
+	       }));
+
+	       const body = {
+		       anthropic_version: "bedrock-2023-05-31",
+		       max_tokens: maxTokens,
+		       temperature,
+		       messages: [
+			       {
+				       role: "user",
+				       content: [
+					       ...imageContents,
+					       { type: "text", text: prompt },
+				       ],
+			       },
+		       ],
+	       };
 
 	const command = new InvokeModelCommand({
 		modelId: MODEL_ID,
