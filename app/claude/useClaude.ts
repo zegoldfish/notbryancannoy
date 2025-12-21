@@ -76,16 +76,16 @@ export function useClaude() {
 		       setImageBase64s(base64s);
 		       setMediaTypes(types);
 
-		       setMessages((prev) => [
-			       ...prev,
-			       ...urls.map((url, idx) => ({
-				       id: `${Date.now()}-${idx}`,
-				       role: "user",
-				       content: "📎 Uploaded an image",
-				       imageUrl: url,
-				       timestamp: Date.now(),
-			       })),
-		       ]);
+			       setMessages((prev) => [
+				       ...prev,
+				       ...urls.map((url, idx) => ({
+					       id: `${Date.now()}-${idx}`,
+					       role: "user" as const,
+					       content: "📎 Uploaded an image",
+					       imageUrl: url,
+					       timestamp: Date.now(),
+				       })),
+			       ]);
 	       }
 
 	       async function askClaude({ question, images, conversationHistory }: AskParams) {
