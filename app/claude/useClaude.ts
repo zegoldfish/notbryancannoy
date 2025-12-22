@@ -1,8 +1,16 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { chatWithClaude } from "./actions";
+import type { SavedConversation, APIMessage, DisplayMessage, MessageContent } from "./types";
+import {
+	getSavedConversations,
+	saveConversation,
+	deleteConversation,
+	getCurrentConversationId,
+	setCurrentConversationId as setStoredConversationId,
+} from "./storage";
 
 async function fileToBase64(file: File) {
 	const arrayBuffer = await file.arrayBuffer();
@@ -13,23 +21,6 @@ async function fileToBase64(file: File) {
 	}
 	return btoa(binary);
 }
-
-export type MessageContent =
-	| { type: "text"; text: string }
-	| { type: "image"; source: { type: "base64"; media_type: string; data: string } };
-
-export type APIMessage = {
-	role: "user" | "assistant";
-	content: MessageContent[] | string;
-};
-
-export type DisplayMessage = {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-	imageUrl?: string;
-	timestamp: number;
-};
 
 type AskParams = {
 	question: string;
@@ -48,6 +39,55 @@ export function useClaude() {
 	const [conversationHistory, setConversationHistory] = useState<APIMessage[]>([]);
 	const [maxTokens, setMaxTokens] = useState(600);
 	const [temperature, setTemperature] = useState(0.7);
+	const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+	const [conversationName, setConversationName] = useState("New Conversation");
+	const [savedConversations, setSavedConversations] = useState<SavedConversation[]>([]);
+
+	// Load conversations on mount
+	useEffect(() => {
+		const conversations = getSavedConversations();
+		setSavedConversations(conversations);
+		const currentId = getCurrentConversationId();
+		if (currentId) {
+			const current = conversations.find((c) => c.id === currentId);
+			if (current) {
+				setCurrentConversationId(current.id);
+				setConversationName(current.name);
+				setMessages(current.messages);
+				setConversationHistory(current.conversationHistory);
+				setMaxTokens(current.maxTokens);
+				setTemperature(current.temperature);
+			}
+		}
+	}, []);
+
+	// Auto-save current conversation
+	useEffect(() => {
+		if (messages.length === 0) return;
+
+		const id = currentConversationId || `conv_${Date.now()}`;
+		const existing = getSavedConversations();
+		const existingCreatedAt = existing.find((c) => c.id === currentConversationId)?.createdAt;
+
+		const conversation: SavedConversation = {
+			id,
+			name: conversationName,
+			messages,
+			conversationHistory,
+			maxTokens,
+			temperature,
+			createdAt: existingCreatedAt || Date.now(),
+			updatedAt: Date.now(),
+		};
+
+		if (!currentConversationId) {
+			setCurrentConversationId(id);
+			setStoredConversationId(id);
+		}
+
+		saveConversation(conversation);
+		setSavedConversations(getSavedConversations());
+	}, [messages, conversationHistory, maxTokens, temperature, conversationName, currentConversationId]);
 
 	       async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
 		       const fileList = event.target.files;
@@ -185,6 +225,40 @@ export function useClaude() {
 		       setImageBase64s([]);
 		       setMediaTypes([]);
 		       setQuestion("");
+		       setCurrentConversationId(null);
+		       setStoredConversationId(null);
+		       setConversationName("New Conversation");
+	       }
+
+	       function handleLoadConversation(id: string) {
+		       const conversations = getSavedConversations();
+		       const conversation = conversations.find((c) => c.id === id);
+		       if (!conversation) return;
+
+		       setCurrentConversationId(conversation.id);
+		       setStoredConversationId(conversation.id);
+		       setConversationName(conversation.name);
+		       setMessages(conversation.messages);
+		       setConversationHistory(conversation.conversationHistory);
+		       setMaxTokens(conversation.maxTokens);
+		       setTemperature(conversation.temperature);
+		       setFiles([]);
+		       setImageUrls([]);
+		       setImageBase64s([]);
+		       setMediaTypes([]);
+		       setQuestion("");
+	       }
+
+	       function handleDeleteConversation(id: string) {
+		       deleteConversation(id);
+		       setSavedConversations(getSavedConversations());
+		       if (currentConversationId === id) {
+			       handleClearChat();
+		       }
+	       }
+
+	       function handleRenameConversation(name: string) {
+		       setConversationName(name);
 	       }
 
 	       return {
@@ -201,8 +275,14 @@ export function useClaude() {
 		       setMaxTokens,
 		       temperature,
 		       setTemperature,
+		       currentConversationId,
+		       conversationName,
+		       savedConversations,
 		       handleFileChange,
 		       handleAskQuestion,
 		       handleClearChat,
+		       handleLoadConversation,
+		       handleDeleteConversation,
+		       handleRenameConversation,
 	       };
 }

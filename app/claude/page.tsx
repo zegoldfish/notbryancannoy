@@ -8,6 +8,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { useUser } from "@context/UserContext";
 import { Unauthorized } from "@app/components/Unauthorized";
 import { useClaude } from "./useClaude";
+import ConversationList from "./ConversationList";
 
 type CodeProps = {
 	inline?: boolean;
@@ -39,7 +40,7 @@ const markdownComponents: Components = {
 	strong: (props) => <strong className="font-semibold" {...props} />,
 	em: (props) => <em className="italic" {...props} />,
 	code: Code,
-	a: (props) => <a className="underline text-sky-700 hover:text-sky-900" target="_blank" rel="noreferrer" {...props} />, // safe because sanitized
+	a: (props) => <a className="underline text-sky-700 hover:text-sky-900" target="_blank" rel="noreferrer" {...props} />,
 	blockquote: (props) => <blockquote className="border-l-4 border-slate-300 pl-3 text-sm text-inherit" {...props} />,
 	table: (props) => <table className="w-full text-sm border-collapse" {...props} />,
 	th: (props) => <th className="border border-slate-200 px-2 py-1 text-left" {...props} />,
@@ -62,22 +63,27 @@ export default function ClaudePage() {
 	const { session, status } = useUser();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	       const {
-		       files,
-		       imageUrls,
-		       imageBase64s,
-		       question,
-		       setQuestion,
-		       loading,
-		       messages,
-		       maxTokens,
-		       setMaxTokens,
-		       temperature,
-		       setTemperature,
-		       handleFileChange,
-		       handleAskQuestion,
-		       handleClearChat,
-	       } = useClaude();
+	const {
+		files,
+		imageBase64s,
+		question,
+		setQuestion,
+		loading,
+		messages,
+		maxTokens,
+		setMaxTokens,
+		temperature,
+		setTemperature,
+		currentConversationId,
+		conversationName,
+		savedConversations,
+		handleFileChange,
+		handleAskQuestion,
+		handleClearChat,
+		handleLoadConversation,
+		handleDeleteConversation,
+		handleRenameConversation,
+	} = useClaude();
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,19 +105,36 @@ export default function ClaudePage() {
 						<h1 className="text-2xl font-semibold text-slate-900">Chat with Claude</h1>
 						<p className="text-sm text-slate-600">Ask anything, optionally include an image for visual analysis</p>
 					</div>
-					{messages.length > 0 && (
-						<button
-							onClick={handleClearChat}
-							className="text-sm text-slate-600 hover:text-slate-900 underline"
-						>
-							Clear chat
-						</button>
-					)}
+					<div className="flex items-center gap-2">
+						<ConversationList
+							conversations={savedConversations}
+							currentConversationId={currentConversationId}
+							onLoad={handleLoadConversation}
+							onDelete={handleDeleteConversation}
+							onRename={handleRenameConversation}
+							onNew={handleClearChat}
+							currentName={conversationName}
+						/>
+						{messages.length > 0 && (
+							<button
+								onClick={handleClearChat}
+								className="text-sm text-slate-600 hover:text-slate-900 underline"
+							>
+								New
+							</button>
+						)}
+					</div>
 				</div>
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-4 py-6">
 				<div className="mx-auto max-w-3xl space-y-4">
+					{currentConversationId && (
+						<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+							<span className="font-medium">{conversationName}</span>
+							<span className="text-blue-600 text-xs ml-2">• Auto-saving</span>
+						</div>
+					)}
 					{messages.length === 0 && (
 						<div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
 							<p className="text-sm text-slate-600">Start a conversation with Claude. Upload an image for visual analysis (optional).</p>
@@ -159,26 +182,26 @@ export default function ClaudePage() {
 			<div className="border-t border-slate-200 bg-white px-4 py-4 shadow-sm">
 				<div className="mx-auto max-w-3xl space-y-3">
 					<div className="flex items-center gap-3">
-						   <label
-							   htmlFor="file"
-							   className="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-						   >
-							   {files.length > 0 ? "Change images" : "Upload images"}
-						   </label>
-						   <input
-							   id="file"
-							   type="file"
-							   accept="image/png,image/jpeg,image/webp"
-							   multiple
-							   onChange={handleFileChange}
-							   className="hidden"
-						   />
-						   {files.length > 0 && (
-							   <span className="text-xs text-slate-500">
-								   {files.map((f) => f.name).join(", ")}
-							   </span>
-						   )}
-					   </div>
+						<label
+							htmlFor="file"
+							className="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+						>
+							{files.length > 0 ? "Change images" : "Upload images"}
+						</label>
+						<input
+							id="file"
+							type="file"
+							accept="image/png,image/jpeg,image/webp"
+							multiple
+							onChange={handleFileChange}
+							className="hidden"
+						/>
+						{files.length > 0 && (
+							<span className="text-xs text-slate-500">
+								{files.map((f) => f.name).join(", ")}
+							</span>
+						)}
+					</div>
 
 					<div className="flex items-center gap-3">
 						<label htmlFor="maxTokens" className="text-sm font-medium text-slate-700">
@@ -197,7 +220,7 @@ export default function ClaudePage() {
 						<p className="text-xs text-slate-500">50-4000</p>
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex-items-center gap-3">
 						<label htmlFor="temperature" className="text-sm font-medium text-slate-700">
 							Temperature: {temperature.toFixed(2)}
 						</label>
@@ -226,7 +249,7 @@ export default function ClaudePage() {
 									}
 								}}
 								rows={1}
-								   placeholder={imageBase64s.length > 0 ? "Ask a question about the images..." : "Ask Claude anything..."}
+								placeholder={imageBase64s.length > 0 ? "Ask a question about the images..." : "Ask Claude anything..."}
 								className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
 							/>
 						</div>
