@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.948.0",
-    "@aws-sdk/client-dynamodb": "^3.956.0",
+    "@aws-sdk/client-dynamodb": "^3.974.0",
     "@aws-sdk/client-s3": "^3.948.0",
-    "@aws-sdk/lib-dynamodb": "^3.956.0",
-    "@aws-sdk/s3-presigned-post": "^3.948.0",
+    "@aws-sdk/lib-dynamodb": "^3.974.0",
+    "@aws-sdk/s3-presigned-post": "^3.974.0",
     "@aws-sdk/s3-request-presigner": "^3.948.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
